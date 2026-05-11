@@ -24,7 +24,7 @@ echo "  PID=$HM_PID"
 
 # 3. Router (8000)
 echo "[3/3] Starting Router on :8000..."
-$VENV router/server.py > /tmp/router.log 2>&1 &
+PYTHONPATH=$DIR $VENV router/server.py > /tmp/router.log 2>&1 &
 RT_PID=$!
 echo "  PID=$RT_PID"
 
