@@ -1,137 +1,62 @@
-# Agent Cluster Router
+<div align="center">
 
-> 混合 AI Agent 集群统一路由网关 | Multi-Agent Cluster Gateway
+# 🚦 Agent Cluster Router v4.0
 
-[English](#english) | [中文](#chinese)
+**Multi-Agent Collaborative Gateway — Smart Routing · Commander Mode · Skill-Aware Delegation**
 
----
+[<kbd> <b>🇬🇧 English</b> </kbd>](#en) 
+[<kbd> <b>🇨🇳 中文</b> </kbd>](#zh)
 
-## English
-
-Agent Cluster Router is a unified entry point that orchestrates multiple AI agent backends (Hermes, OpenClaw) as a single logical cluster. It provides intelligent routing based on task intent, canary deployment control, load balancing, session memory across backends, and real-time metrics.
-
-### Architecture
-
-```
-User → Router (:8000) ──→ OpenClaw Pool (:8082, :9082...)
-                      ──→ Hermes Pool  (:8081, :9081...)
-```
-
-### Features
-
-| Feature | Description |
-|---------|-------------|
-| **Intent Routing** | Auto-classify messages: code → OpenClaw, plan/search → Hermes |
-| **Manual Routing** | `preferred=openclaw` or `preferred=hermes` |
-| **Canary Deploy** | Gradual traffic shift via `PUT /canary {ratio, target}` |
-| **Session Memory** | Cross-backend chat history — set context on Hermes, query on OpenClaw |
-| **Load Balancing** | 3 strategies: weighted, least_connections, round_robin |
-| **Health Checks** | Auto-eject unhealthy nodes after N failures |
-| **Metrics** | p50/p95/p99 latency, per-backend/intent breakdown, recent errors |
-| **In-Hermes Mode** | Hermes itself can classify intents and delegate code to OpenClaw |
-
-### Quick Start
-
-```bash
-# Start all services
-bash /srv/agent-cluster/start.sh
-
-# Health check
-curl http://127.0.0.1:8000/health
-
-# Chat — auto routing
-curl -X POST http://127.0.0.1:8000/chat \
-  -H 'Content-Type: application/json' \
-  -d '{"messages":[{"role":"user","content":"write a Python function that sorts a list"}]}'
-# → routes to OpenClaw (code intent detected)
-
-# Chat — manual routing
-curl -X POST http://127.0.0.1:8000/chat \
-  -H 'Content-Type: application/json' \
-  -d '{"preferred":"hermes","messages":[{"role":"user","content":"what is Kubernetes?"}]}'
-```
-
-### API Reference
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/health` | Router health check |
-| `GET` | `/status` | Cluster status + metrics summary |
-| `GET` | `/nodes` | List all registered nodes |
-| `POST` | `/chat` | Send message (supports `session_id`, `preferred`, `intent`) |
-| `GET` | `/sessions` | List active sessions |
-| `DELETE` | `/sessions/{id}` | Clear a session |
-| `GET` | `/metrics` | Full metrics snapshot |
-| `POST` | `/metrics/reset` | Reset all counters |
-| `GET` | `/canary` | View canary config |
-| `PUT` | `/canary` | Set canary ratio and target |
-| `GET` | `/strategy` | View load balancing strategy |
-| `PUT` | `/strategy` | Switch strategy (weighted/least_connections/round_robin) |
-
-### In-Hermes Mode
-
-From within Hermes CLI, classify and route without the Router:
-
-```bash
-# Classify intent
-python3 ~/.hermes/scripts/hermes_cluster_router.py --classify-only "write a function"
-# → {"intent": "code", "backend_hint": "openclaw"}
-
-# Full route (classify + call OpenClaw)
-python3 ~/.hermes/scripts/hermes_cluster_router.py "write a Python function to reverse a string"
-```
-
-### Tech Stack
-
-- Python 3.11, FastAPI, uvicorn, httpx, PyYAML
-- OpenClaw (Node.js) via subprocess adapter
-- Hermes CLI via subprocess adapter
-- 61 unit tests (pytest), all passing
-
-### Directory Structure
-
-```
-/srv/agent-cluster/
-├── config.yaml              # Cluster node configuration
-├── start.sh / stop.sh       # Lifecycle scripts
-├── router/
-│   ├── server.py            # FastAPI Router (main entry)
-│   ├── models.py            # Internal request/response protocol
-│   ├── registry.py          # Node registry (YAML → pools)
-│   ├── routing.py           # Routing engine + IntentClassifier
-│   ├── health.py            # Background health checker
-│   └── metrics.py           # Metrics collector (latency, rates, errors)
-├── adapter/
-│   ├── hermes_adapter.py    # Hermes CLI → HTTP wrapper
-│   └── openclaw_adapter.py  # OpenClaw CLI → HTTP wrapper
-└── tests/                   # 61 pytests (session, routing, registry, API, LB)
-```
+</div>
 
 ---
 
-## 中文
+<!-- Chinese content (hidden by default, shown when #zh is in URL) -->
+<div id="zh" style="display:none">
 
-Agent Cluster Router 是一个统一入口网关，将多个 AI Agent 后端（Hermes、OpenClaw）编排为单一逻辑集群。提供基于任务意图的智能路由、灰度发布控制、负载均衡、跨后端会话记忆和实时监控。
+## 🇨🇳 中文
+
+Agent Cluster Router 将多个 AI Agent 后端（Hermes、OpenClaw）编排为统一智能网关。**v4 新增指挥官模式** — Hermes 设计架构，OpenClaw 编码实现，双向协作交互。同时配备**三层决策路由**和**Skill 感知委托**：当 OpenClaw 拥有相关技能时自动转交任务。
+
+### 核心功能
+
+| 功能 | 说明 |
+|------|------|
+| **🧠 指挥官模式** | Hermes（架构师）↔ OpenClaw（工程师）多轮协作。Hermes 设计方案，OpenClaw 编码实现，可随时提问，Hermes 审查迭代。 |
+| **🎯 三层决策路由** | L1: 正则+skill匹配（0ms, 0 token）→ L2: Hermes LLM自主判断（~1s）→ L3: 直接询问 OpenClaw（兜底） |
+| **🔧 Skill 感知路由** | 自动检测 OpenClaw 技能（天气、GitHub、音乐、邮件等）并路由任务。42+ 技能支持中文别名触发。 |
+| **📋 意图路由** | 自动分类：代码/调试/重构 → OpenClaw，规划/搜索/闲聊 → Hermes |
+| **⚖️ 负载均衡** | 加权随机 / 最少连接 / 轮询，运行时动态切换 |
+| **💾 会话记忆** | 跨后端对话历史 — Hermes 设上下文，OpenClaw 查询，同一会话跨后端 |
+| **📊 监控指标** | p50/p95/p99 延迟、按后端/意图分组统计 |
+| **🩺 健康检查** | 每 30s 检查，自动剔除不健康节点 |
+| **🚦 灰度发布** | 动态调整流量比例，平滑迁移 |
 
 ### 架构
 
 ```
-用户 → Router (:8000) ──→ OpenClaw 池 (:8082, :9082...)
-                      ──→ Hermes 池  (:8081, :9081...)
+┌─────────────────────────────────────────────────────┐
+│                  Agent Cluster Router               │
+│                                                     │
+│  ┌──────────────┐   ┌──────────────┐   ┌─────────┐ │
+│  │ 三层决策      │   │ 指挥官协议    │   │ Skill   │ │
+│  │ 引擎         │   │ (Hermes↔Claw)│   │ 索引    │ │
+│  └──────┬───────┘   └──────┬───────┘   └────┬────┘ │
+│         │                  │                 │      │
+│         ▼                  ▼                 ▼      │
+│  ┌──────────────────────────────────────────────┐   │
+│  │              路由引擎                         │   │
+│  │   加权 · 最少连接 · 轮询                       │   │
+│  └──────────────────┬───────────────────────────┘   │
+│                     │                                │
+│         ┌───────────┴───────────┐                    │
+│         ▼                       ▼                    │
+│  ┌─────────────┐         ┌─────────────┐            │
+│  │  OpenClaw   │         │   Hermes    │            │
+│  │  (工程师)   │         │  (架构师)   │            │
+│  └─────────────┘         └─────────────┘            │
+└─────────────────────────────────────────────────────┘
 ```
-
-### 功能
-
-| 功能 | 说明 |
-|------|------|
-| **意图路由** | 自动分类消息：代码 → OpenClaw，计划/搜索 → Hermes |
-| **手动路由** | `preferred=openclaw` 或 `preferred=hermes` |
-| **灰度发布** | 通过 `PUT /canary` 动态调整流量比例 |
-| **会话记忆** | 跨后端聊天历史 — Hermes 设上下文，OpenClaw 读取 |
-| **负载均衡** | 3 种策略：加权随机、最少连接、轮询 |
-| **健康检查** | 连续失败 N 次后自动剔除节点 |
-| **监控面板** | p50/p95/p99 延迟，按后端/意图分组，最近错误 |
-| **Hermes 内模式** | Hermes 自身可直接分类意图并委托代码任务给 OpenClaw |
 
 ### 快速开始
 
@@ -142,17 +67,50 @@ bash /srv/agent-cluster/start.sh
 # 健康检查
 curl http://127.0.0.1:8000/health
 
-# 聊天 — 自动路由
+# 聊天 — 自动路由（代码意图→OpenClaw）
 curl -X POST http://127.0.0.1:8000/chat \
   -H 'Content-Type: application/json' \
-  -d '{"messages":[{"role":"user","content":"写一个Python函数来排序列表"}]}'
-# → 自动路由到 OpenClaw（检测到代码意图）
+  -d '{"messages":[{"role":"user","content":"写一个Python排序函数"}]}'
 
-# 聊天 — 手动路由
-curl -X POST http://127.0.0.1:8000/chat \
-  -H 'Content-Type: application/json' \
-  -d '{"preferred":"hermes","messages":[{"role":"user","content":"Kubernetes是什么？"}]}'
+# 指挥官模式 — 协作会话
+python3 scripts/hermes_commander.py --new-session "搭建博客系统"
+python3 scripts/hermes_commander.py --send <id> "任务1：创建FastAPI项目结构..."
 ```
+
+### 指挥官模式
+
+Hermes 设计架构、拆分任务，OpenClaw 逐项实现，全程互动交流：
+
+```
+用户："帮我做一个完整的博客系统"
+  │
+  ├─ Hermes：设计架构 → 拆分为 6 个子任务
+  │
+  ├─ Hermes → OpenClaw："任务1：搭建 FastAPI 项目..."
+  │   OpenClaw：交付代码，同时问："用异步还是同步路由？"
+  │   Hermes 判断：架构决策 → 转发给用户
+  │   用户选"异步" → Hermes 回传 OpenClaw
+  │
+  ├─ Hermes：验证通过 → "任务2：定义数据模型..."
+  │
+  └─ ... 循环直至全部完成
+```
+
+**提问分流规则：**
+
+| Hermes 直接回答 | 转发给用户决策 |
+|-----------------|---------------|
+| "文件名用什么？" | "数据库用 SQLite 还是 PG？" |
+| "加不加类型注解？" | "缓存用 Redis 还是内存？" |
+| "f-string 还是 .format()？" | "前后端要不要拆成两个仓库？" |
+| "保存到哪个路径？" | "认证用 JWT 还是 Session？" |
+
+> **原则：犹豫一秒就转发。** 猜错的代价比多问一句大得多。
+
+| 脚本 | 用途 |
+|------|------|
+| `scripts/hermes_commander.py` | 多轮协作协议（会话管理、提问检测、交付分析） |
+| `scripts/hermes_cluster_router.py` | 意图分类 + 三层决策 + Skill索引 + 中文别名 |
 
 ### API 参考
 
@@ -160,56 +118,193 @@ curl -X POST http://127.0.0.1:8000/chat \
 |------|------|------|
 | `GET` | `/health` | Router 健康检查 |
 | `GET` | `/status` | 集群状态 + 指标摘要 |
-| `GET` | `/nodes` | 列出所有注册节点 |
-| `POST` | `/chat` | 发送消息（支持 `session_id`、`preferred`、`intent`） |
-| `GET` | `/sessions` | 列出活跃会话 |
+| `GET` | `/nodes` | 所有注册节点 |
+| `POST` | `/chat` | 发送消息（`session_id`, `preferred`, `strategy`, `intent`） |
+| `GET` | `/sessions` | 活跃会话列表 |
 | `DELETE` | `/sessions/{id}` | 清除指定会话 |
 | `GET` | `/metrics` | 完整指标快照 |
-| `POST` | `/metrics/reset` | 重置所有计数 |
-| `GET` | `/canary` | 查看灰度配置 |
-| `PUT` | `/canary` | 设置灰度比例和目标 |
-| `GET` | `/strategy` | 查看负载均衡策略 |
+| `POST` | `/metrics/reset` | 重置计数 |
+| `GET` | `/strategy` | 当前负载均衡策略 |
 | `PUT` | `/strategy` | 切换策略（weighted/least_connections/round_robin） |
-
-### Hermes 内模式
-
-在 Hermes CLI 中直接使用，无需通过 Router：
-
-```bash
-# 分类意图
-python3 ~/.hermes/scripts/hermes_cluster_router.py --classify-only "写一个函数"
-# → {"intent": "code", "backend_hint": "openclaw"}
-
-# 完整路由（分类 + 调用 OpenClaw）
-python3 ~/.hermes/scripts/hermes_cluster_router.py "写一个Python函数来反转字符串"
-```
-
-### 技术栈
-
-- Python 3.11, FastAPI, uvicorn, httpx, PyYAML
-- OpenClaw (Node.js) 通过子进程适配器
-- Hermes CLI 通过子进程适配器
-- 61 个单元测试 (pytest)，全部通过
 
 ### 目录结构
 
 ```
-/srv/agent-cluster/
-├── config.yaml              # 集群节点配置
-├── start.sh / stop.sh       # 启停脚本
+agent-cluster-router/
+├── config.yaml                  # 节点配置
+├── start.sh / stop.sh           # 启停脚本
 ├── router/
-│   ├── server.py            # FastAPI Router（主入口）
-│   ├── models.py            # 内部请求/响应协议
-│   ├── registry.py          # 节点注册中心（YAML → 节点池）
-│   ├── routing.py           # 路由引擎 + 意图分类器
-│   ├── health.py            # 后台健康检查
-│   └── metrics.py           # 指标收集器（延迟、成功率、错误）
+│   ├── server.py                # FastAPI Router（主入口）
+│   ├── routing.py               # 路由引擎 + 意图分类 + 委托决策
+│   ├── registry.py              # 节点注册中心（YAML → 节点池）
+│   ├── health.py                # 健康检查
+│   └── metrics.py               # 指标收集器
 ├── adapter/
-│   ├── hermes_adapter.py    # Hermes CLI → HTTP 封装
-│   └── openclaw_adapter.py  # OpenClaw CLI → HTTP 封装
-└── tests/                   # 61 个 pytest（会话、路由、注册中心、API、负载均衡）
+│   ├── hermes_adapter.py        # Hermes CLI → HTTP
+│   └── openclaw_adapter.py      # OpenClaw CLI → HTTP
+├── scripts/
+│   ├── hermes_cluster_router.py # In-Hermes 路由（三层决策 + Skill索引 + 中文别名）
+│   └── hermes_commander.py      # 指挥官协作协议
+└── tests/                       # 61 个 pytest
 ```
 
----
+### 技术栈
 
-*Built with Hermes Agent + OpenClaw · 61 tests passing · deepseek-v4-pro*
+Python 3.11 · FastAPI · uvicorn · httpx · PyYAML · pytest (61/61 通过) · deepseek-v4-pro
+
+</div>
+
+<!-- English content (visible by default) -->
+<div id="en">
+
+## 🇬🇧 English
+
+Agent Cluster Router orchestrates multiple AI agent backends (Hermes, OpenClaw) as a unified intelligent gateway. **v4 adds Commander Mode** — Hermes designs architecture, OpenClaw implements, with bidirectional collaboration. Also features **three-layer decision routing** and **skill-aware delegation**: automatically routes to OpenClaw when it has a relevant skill.
+
+### Key Features
+
+| Feature | Description |
+|---------|-------------|
+| **🧠 Commander Mode** | Hermes (Architect) ↔ OpenClaw (Engineer) multi-turn collaboration. Hermes designs, OpenClaw builds, asks questions, Hermes reviews and iterates. |
+| **🎯 Three-Layer Routing** | L1: Regex + skill match (0ms, 0 token) → L2: Hermes LLM judgment (~1s) → L3: Ask OpenClaw directly (fallback) |
+| **🔧 Skill-Aware Routing** | Auto-detects OpenClaw skills (weather, GitHub, Spotify, email, Notion, etc.) and routes tasks there. 42+ skills with Chinese aliases. |
+| **📋 Intent Routing** | Auto-classify: code/debug/refactor → OpenClaw, plan/search/chat → Hermes |
+| **⚖️ Load Balancing** | Weighted / least_connections / round_robin, runtime switchable |
+| **💾 Session Memory** | Cross-backend conversation history — set context on Hermes, query OpenClaw |
+| **📊 Metrics** | p50/p95/p99 latency, per-backend/intent breakdown |
+| **🩺 Health Checks** | Auto-eject unhealthy nodes, 30s interval |
+| **🚦 Canary Deploy** | Gradual traffic shift between backends |
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────┐
+│                  Agent Cluster Router               │
+│                                                     │
+│  ┌──────────────┐   ┌──────────────┐   ┌─────────┐ │
+│  │ 3-Layer      │   │ Commander    │   │ Skill   │ │
+│  │ Decision     │   │ Protocol     │   │ Index   │ │
+│  │ Engine       │   │ (Hermes↔Claw)│   │ (42 CN) │ │
+│  └──────┬───────┘   └──────┬───────┘   └────┬────┘ │
+│         │                  │                 │      │
+│         ▼                  ▼                 ▼      │
+│  ┌──────────────────────────────────────────────┐   │
+│  │              Routing Engine                   │   │
+│  │   weighted · least_conn · round_robin        │   │
+│  └──────────────────┬───────────────────────────┘   │
+│                     │                                │
+│         ┌───────────┴───────────┐                    │
+│         ▼                       ▼                    │
+│  ┌─────────────┐         ┌─────────────┐            │
+│  │  OpenClaw   │         │   Hermes    │            │
+│  │  (Engineer) │         │ (Architect) │            │
+│  └─────────────┘         └─────────────┘            │
+└─────────────────────────────────────────────────────┘
+```
+
+### Quick Start
+
+```bash
+# Start all services
+bash /srv/agent-cluster/start.sh
+
+# Health check
+curl http://127.0.0.1:8000/health
+
+# Chat — auto routing (code intent → OpenClaw)
+curl -X POST http://127.0.0.1:8000/chat \
+  -H 'Content-Type: application/json' \
+  -d '{"messages":[{"role":"user","content":"write a Python function that sorts a list"}]}'
+
+# Commander Mode — collaborative session
+python3 scripts/hermes_commander.py --new-session "Build a blog system"
+python3 scripts/hermes_commander.py --send <id> "Task 1: Create FastAPI project structure..."
+```
+
+### Commander Mode
+
+Hermes designs the architecture, breaks work into subtasks, OpenClaw implements them with continuous Q&A:
+
+```
+User: "Build a complete blog system"
+  │
+  ├─ Hermes: Design architecture → 6 subtasks
+  │
+  ├─ Hermes → OpenClaw: "Task 1: Set up FastAPI project..."
+  │   OpenClaw: delivers code + asks "Use async or sync routes?"
+  │   Hermes judges: architectural decision → forwards to user
+  │   User picks "async" → Hermes relays to OpenClaw
+  │
+  ├─ Hermes: validates → "Task 2: Define data models..."
+  │
+  └─ ... iterate until all tasks complete
+```
+
+**Question triage rules:**
+
+| Hermes answers directly | Forward to user |
+|------------------------|-----------------|
+| "What filename?" | "SQLite or PostgreSQL?" |
+| "Add type hints?" | "Redis or in-memory cache?" |
+| "f-string or .format()?" | "Monorepo or separate repos?" |
+| "Which file path?" | "JWT or session auth?" |
+
+> **Rule of thumb: if you hesitate, forward it.** A forwarded question costs one round-trip. A wrong assumption costs a rewrite.
+
+| Script | Purpose |
+|--------|---------|
+| `scripts/hermes_commander.py` | Multi-turn collaboration protocol (session mgmt, question detection, deliverable analysis) |
+| `scripts/hermes_cluster_router.py` | Intent classification + 3-layer decision + skill index + CN aliases |
+
+### API Reference
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/health` | Router health |
+| `GET` | `/status` | Cluster status + metrics |
+| `GET` | `/nodes` | All registered nodes |
+| `POST` | `/chat` | Send message (`session_id`, `preferred`, `strategy`, `intent`) |
+| `GET` | `/sessions` | Active sessions |
+| `DELETE` | `/sessions/{id}` | Clear session |
+| `GET` | `/metrics` | Full metrics snapshot |
+| `POST` | `/metrics/reset` | Reset counters |
+| `GET` | `/strategy` | Current LB strategy |
+| `PUT` | `/strategy` | Switch strategy (weighted/least_connections/round_robin) |
+
+### Directory Structure
+
+```
+agent-cluster-router/
+├── config.yaml                  # Node configuration
+├── start.sh / stop.sh           # Lifecycle
+├── router/
+│   ├── server.py                # FastAPI Router
+│   ├── routing.py               # Routing engine + IntentClassifier + DelegationCheck
+│   ├── registry.py              # Node registry (YAML → pools)
+│   ├── health.py                # Health checker
+│   └── metrics.py               # Metrics collector
+├── adapter/
+│   ├── hermes_adapter.py        # Hermes CLI → HTTP
+│   └── openclaw_adapter.py      # OpenClaw CLI → HTTP
+├── scripts/
+│   ├── hermes_cluster_router.py # In-Hermes router (3-layer + skill index + CN aliases)
+│   └── hermes_commander.py      # Commander collaboration protocol
+└── tests/                       # 61 pytests
+```
+
+### Tech Stack
+
+Python 3.11 · FastAPI · uvicorn · httpx · PyYAML · pytest (61/61 passing) · deepseek-v4-pro
+
+</div>
+
+<div align="center">
+
+**v4.0** · Built with Hermes + OpenClaw · 61 tests passing · [WeneShan/agent-cluster-router](https://github.com/WeneShan/agent-cluster-router)
+
+</div>
+
+<style>
+#zh:target { display: block !important; }
+#zh:target ~ #en { display: none; }
+</style>
