@@ -8,7 +8,7 @@ import time
 import uuid
 import httpx
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
 import uvicorn
 
@@ -21,6 +21,8 @@ from router.models import (
     InputContext, RoutingHint, TaskIntent,
     Priority, RouteStrategy,
 )
+from router.security import verify_api_key, validate_messages
+from router.rate_limit import rate_limit
 
 
 # --- 会话管理 ---
@@ -85,6 +87,8 @@ class ChatRequest(BaseModel):
     canary_ratio: float = 0.0
     system_prompt: str = ""
     intent: str = "chat"
+    dry_run: bool = False         # 只返回路由决策，不调用后端
+    user_id: str = ""             # 用户标识，用于 session 隔离
 
 
 # --- 端点 ---
@@ -212,10 +216,10 @@ async def reset_metrics():
     return {"message": "Metrics reset"}
 
 
-@app.post("/chat")
+@app.post("/chat", dependencies=[Depends(verify_api_key), Depends(rate_limit)])
 async def chat(req: ChatRequest):
     """
-    统一聊天入口 — 支持会话记忆
+    统一聊天入口 — 支持会话记忆 + dry_run 路由评测
     
     会话模式:
       POST /chat {"session_id": "abc", "messages": [...]}
@@ -224,16 +228,26 @@ async def chat(req: ChatRequest):
     单次模式:
       POST /chat {"messages": [...]}
       → 直接转发，不保存历史
+    
+    dry_run 模式:
+      POST /chat {"dry_run": true, "messages": [...]}
+      → 只返回路由决策，不调用后端
     """
-    # 生成或使用已有 session_id
+    # 用户隔离 session key
+    user_id = req.user_id or "default"
     session_id = req.session_id or str(uuid.uuid4())
+    session_key = f"{user_id}:{session_id}"
+    
+    # 消息大小验证
+    validate_messages(new_messages=[{"role": m.role, "content": m.content} for m in req.messages])
     
     # 获取会话历史
-    history = session_manager.get(session_id) if req.session_id else []
+    history = session_manager.get(session_key) if req.session_id else []
     
-    # 追加新消息
+    # 追加新消息（dry_run 不保存）
     new_messages = [{"role": m.role, "content": m.content} for m in req.messages]
-    session_manager.append(session_id, new_messages)
+    if not req.dry_run:
+        session_manager.append(session_key, new_messages)
     
     # 构建完整上下文
     full_messages = history + new_messages
@@ -265,6 +279,21 @@ async def chat(req: ChatRequest):
     node = routing_engine.select_node(internal_req)
     if not node:
         raise HTTPException(status_code=503, detail="No healthy backend available")
+
+    # --- dry_run 模式：只返回路由决策 ---
+    if req.dry_run:
+        # 判断决策层
+        decision_layer = _determine_decision_layer(req, internal_req)
+        matched_skill = None  # 未来可从 skill registry 获取
+        return {
+            "intent": detected_intent.value,
+            "selected_backend": node.cluster,
+            "node": node.name,
+            "decision_layer": decision_layer,
+            "matched_skill": matched_skill,
+            "session_id": session_id,
+            "reason": _routing_reason(decision_layer, detected_intent, node),
+        }
 
     # 转发到后端（发送完整历史，跟踪连接）
     routing_engine.acquire_connection(node.name)
@@ -326,6 +355,32 @@ async def chat(req: ChatRequest):
                 status_code=502,
                 detail=f"Backend {node.cluster}/{node.name} unreachable: {str(e)}",
             )
+
+
+def _determine_decision_layer(req: ChatRequest, internal_req: AgentRequest) -> str:
+    """判断路由决策来自哪一层"""
+    preferred = req.preferred
+    if preferred == "hermes" or preferred == "openclaw":
+        return "L1"
+    if req.tags:
+        return "L2"
+    if internal_req.task.intent != TaskIntent.CHAT:
+        return "L3"
+    if req.canary_ratio > 0:
+        return "L4"
+    return "L5"
+
+
+def _routing_reason(layer: str, intent: TaskIntent, node) -> str:
+    """生成路由决策说明"""
+    reasons = {
+        "L1": f"manual override to {node.cluster}",
+        "L2": "matched tag rule",
+        "L3": f"matched intent '{intent.value}' → {node.cluster}",
+        "L4": "canary traffic routing",
+        "L5": f"strategy-based fallback to {node.cluster}",
+    }
+    return reasons.get(layer, "unknown")
 
 
 if __name__ == "__main__":

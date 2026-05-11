@@ -1,0 +1,628 @@
+# 意图路由测试用例 — 100+ cases
+# expected_intent: code | plan | search | chat
+# expected_backend: openclaw | hermes
+
+- id: intent_001
+  input: "帮我写一个 Python 快速排序函数"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_002
+  input: "帮我设计一个博客系统架构"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_003
+  input: "这个报错 TypeError: xxx 是什么原因？"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_004
+  input: "帮我规划一下这个项目的开发路线"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_005
+  input: "写一个 React 组件来处理表单验证"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_006
+  input: "帮我设计微服务架构"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_007
+  input: "帮我 debug 这个 null pointer 错误"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_008
+  input: "重构一下这个类，让它符合 SOLID 原则"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_009
+  input: "Write a function to sort an array in JavaScript"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_010
+  input: "What is the best architecture for a real-time chat app?"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_011
+  input: "帮我修一下这个 bug: IndexError: list index out of range"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_012
+  input: "这个项目的技术选型应该怎么考虑？"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_013
+  input: "Implement a binary search tree in Python"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_014
+  input: "Design a scalable API gateway"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_015
+  input: "帮我写一个爬虫脚本"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_016
+  input: "Fix the compilation error in my Rust project"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_017
+  input: "Create a Dockerfile for a Node.js app"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_018
+  input: "How should I structure my monorepo?"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_019
+  input: "帮我 review 一下这段代码"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_020
+  input: "写一个 SQL 查询来统计用户活跃度"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_021
+  input: "Deploy this app to Kubernetes"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_022
+  input: "帮我设计数据库 schema"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_023
+  input: "这段代码的性能瓶颈在哪里？"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_024
+  input: "Build a REST API endpoint for user registration"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_025
+  input: "How to design a rate limiter?"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_026
+  input: "What is the best way to structure this project?"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_027
+  input: "帮我写单元测试"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_028
+  input: "Refactor this 500-line function into smaller ones"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_029
+  input: "帮我规划一个 AI 项目的 roadmap"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_030
+  input: "写一个 Rust 的 HTTP server"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_031
+  input: "Fix the 空指针异常 in my code"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_032
+  input: "Build a CLI 工具 using React"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_033
+  input: "Optimize this Rust function"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_034
+  input: "Implement a 快速排序 algorithm"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_035
+  input: "Add WebSocket to the codebase"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_036
+  input: "Fix the 死锁 in my code"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_037
+  input: "Refactor the auth module"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_038
+  input: "Create a JavaScript script to API"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_039
+  input: "Write a C++ CLI 工具"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_040
+  input: "Add WebSocket to the codebase"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_041
+  input: "Write tests for the 用户模块"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_042
+  input: "Implement a 动态规划 algorithm"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_043
+  input: "Optimize this C++ function"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_044
+  input: "Add OAuth 登录 to the codebase"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_045
+  input: "Create a JavaScript script to 爬虫"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_046
+  input: "Refactor the database layer module"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_047
+  input: "Implement a 动态规划 algorithm"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_048
+  input: "Create a Java script to API"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_049
+  input: "Create a Python script to web scraper"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_050
+  input: "Write a JavaScript 爬虫"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_051
+  input: "Optimize this JavaScript function"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_052
+  input: "Build a 博客系统 using React"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_053
+  input: "Create a JavaScript script to 爬虫"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_054
+  input: "Add 搜索过滤器 to the codebase"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_055
+  input: "Add OAuth 登录 to the codebase"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_056
+  input: "用Vue搭建聊天应用"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_057
+  input: "帮我写一个TypeScript的web scraper"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_058
+  input: "优化这段C++代码的性能"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_059
+  input: "帮我 merge 这个分支"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_060
+  input: "修复这个并发问题"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_061
+  input: "这个Connection refused怎么解决"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_062
+  input: "修复这个死锁"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_063
+  input: "这个Connection refused怎么解决"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_064
+  input: "帮我 merge 这个分支"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_065
+  input: "用Java写一个CLI 工具"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+
+- id: intent_066
+  input: "Design a 推荐 system"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_067
+  input: "What architecture should I use for SaaS 产品?"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_068
+  input: "Design a 微服务 system"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_069
+  input: "How to organize 认证中间件?"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_070
+  input: "What architecture should I use for 企业内部工具?"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_071
+  input: "What architecture should I use for 企业内部工具?"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_072
+  input: "How to organize 支付接口?"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_073
+  input: "Design a 实时数据处理 system"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_074
+  input: "What architecture should I use for 一个社交平台?"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_075
+  input: "Design a CMS system"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_076
+  input: "Design a CMS system"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_077
+  input: "Propose a strategy for 迁移到云"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_078
+  input: "Propose a strategy for 迁移到云"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_079
+  input: "Plan the roadmap for OAuth 登录"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_080
+  input: "What's the best approach for 跨洲部署?"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_081
+  input: "这个跨洲部署怎么设计方案"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_082
+  input: "这个跨洲部署怎么设计方案"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_083
+  input: "帮我制定扩展计划的策略"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_084
+  input: "API 路由应该怎么组织"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_085
+  input: "这个高并发场景怎么设计方案"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_086
+  input: "SaaS 产品的技术选型怎么做"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_087
+  input: "帮我设计电商的架构"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_088
+  input: "这个数据一致性怎么设计方案"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_089
+  input: "一个社交平台的技术选型怎么做"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_090
+  input: "这个高并发场景怎么设计方案"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_091
+  input: "API 路由应该怎么组织"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_092
+  input: "帮我制定扩展计划的策略"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_093
+  input: "这个跨洲部署怎么设计方案"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_094
+  input: "这个数据一致性怎么设计方案"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_095
+  input: "规划WebSocket的开发路线"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+
+- id: intent_096
+  input: "Explain how Rust 的所有权系统 works"
+  expected_intent: "search"
+  expected_backend: "hermes"
+
+- id: intent_097
+  input: "Find documentation about GraphQL"
+  expected_intent: "search"
+  expected_backend: "hermes"
+
+- id: intent_098
+  input: "Search for GraphQL"
+  expected_intent: "search"
+  expected_backend: "hermes"
+
+- id: intent_099
+  input: "Find documentation about GraphQL"
+  expected_intent: "search"
+  expected_backend: "hermes"
+
+- id: intent_100
+  input: "Explain how Rust 的所有权系统 works"
+  expected_intent: "search"
+  expected_backend: "hermes"
+
+- id: intent_101
+  input: "Search for GraphQL"
+  expected_intent: "search"
+  expected_backend: "hermes"
+
+- id: intent_102
+  input: "How does Kubernetes work?"
+  expected_intent: "search"
+  expected_backend: "hermes"
+
+- id: intent_103
+  input: "Who created GraphQL?"
+  expected_intent: "search"
+  expected_backend: "hermes"
+
+- id: intent_104
+  input: "Search for 机器学习"
+  expected_intent: "search"
+  expected_backend: "hermes"
+
+- id: intent_105
+  input: "Find documentation about Kubernetes"
+  expected_intent: "search"
+  expected_backend: "hermes"
+
+- id: intent_106
+  input: "什么是机器学习"
+  expected_intent: "search"
+  expected_backend: "hermes"
+
+- id: intent_107
+  input: "帮我查一下Rust 的所有权系统的文档"
+  expected_intent: "search"
+  expected_backend: "hermes"
+
+- id: intent_108
+  input: "帮我找Kubernetes的教程"
+  expected_intent: "search"
+  expected_backend: "hermes"
+
+- id: intent_109
+  input: "帮我查一下Kubernetes的文档"
+  expected_intent: "search"
+  expected_backend: "hermes"
+
+- id: intent_110
+  input: "GraphQL是什么"
+  expected_intent: "search"
+  expected_backend: "hermes"
+
+- id: intent_111
+  input: "什么是gRPC"
+  expected_intent: "search"
+  expected_backend: "hermes"
+
+- id: intent_112
+  input: "机器学习是什么"
+  expected_intent: "search"
+  expected_backend: "hermes"
+
+- id: intent_113
+  input: "Kubernetes是什么"
+  expected_intent: "search"
+  expected_backend: "hermes"
+
+- id: intent_114
+  input: "Rust 的所有权系统是怎么工作的"
+  expected_intent: "search"
+  expected_backend: "hermes"
+
+- id: intent_115
+  input: "gRPC是什么"
+  expected_intent: "search"
+  expected_backend: "hermes"
+
+- id: intent_116
+  input: "你觉得这个方案怎么样"
+  expected_intent: "chat"
+  expected_backend: "hermes"
+
+- id: intent_117
+  input: "总结一下这篇文章"
+  expected_intent: "chat"
+  expected_backend: "hermes"
+
+- id: intent_118
+  input: "今天天气怎么样"
+  expected_intent: "chat"
+  expected_backend: "hermes"
+
+- id: intent_119
+  input: "总结一下这篇文章"
+  expected_intent: "chat"
+  expected_backend: "hermes"
+
+- id: intent_120
+  input: "你好"
+  expected_intent: "chat"
+  expected_backend: "hermes"
+
+- id: intent_121
+  input: "你觉得这个方案怎么样"
+  expected_intent: "chat"
+  expected_backend: "hermes"
+
+- id: intent_122
+  input: "帮我翻译一段话"
+  expected_intent: "chat"
+  expected_backend: "hermes"
+
+- id: intent_123
+  input: "今天天气怎么样"
+  expected_intent: "chat"
+  expected_backend: "hermes"
+
+- id: intent_124
+  input: "总结一下这篇文章"
+  expected_intent: "chat"
+  expected_backend: "hermes"
+
+- id: intent_125
+  input: "帮我翻译一段话"
+  expected_intent: "chat"
+  expected_backend: "hermes"

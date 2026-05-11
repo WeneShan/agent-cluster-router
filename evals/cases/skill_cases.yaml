@@ -1,0 +1,268 @@
+# Skill 路由测试用例 — 50+ cases
+# expected_skill: 期望匹配的 skill
+# expected_backend: 期望转发的后端
+
+- id: skill_001
+  input: "帮我查一下今天上海天气"
+  expected_skill: "weather"
+  expected_backend: "openclaw"
+
+- id: skill_002
+  input: "帮我看看这个 GitHub 仓库怎么样"
+  expected_skill: "github"
+  expected_backend: "openclaw"
+
+- id: skill_003
+  input: "帮我给客户发一封邮件"
+  expected_skill: "email"
+  expected_backend: "openclaw"
+
+- id: skill_004
+  input: "帮我在 Notion 里新建一个项目页面"
+  expected_skill: "notion"
+  expected_backend: "openclaw"
+
+- id: skill_005
+  input: "帮我搜索一下 Python 异步编程的资料"
+  expected_skill: "web_search"
+  expected_backend: "openclaw"
+
+- id: skill_006
+  input: "What's the weather like in Tokyo?"
+  expected_skill: "weather"
+  expected_backend: "openclaw"
+
+- id: skill_007
+  input: "帮我 star 一下这个 GitHub 项目"
+  expected_skill: "github"
+  expected_backend: "openclaw"
+
+- id: skill_008
+  input: "发邮件给老板汇报本周进度"
+  expected_skill: "email"
+  expected_backend: "openclaw"
+
+- id: skill_009
+  input: "Notion 里更新会议记录"
+  expected_skill: "notion"
+  expected_backend: "openclaw"
+
+- id: skill_010
+  input: "查一下北京明天气温"
+  expected_skill: "weather"
+  expected_backend: "openclaw"
+
+- id: skill_011
+  input: "帮我 clone 这个 GitHub 仓库到本地"
+  expected_skill: "github"
+  expected_backend: "openclaw"
+
+- id: skill_012
+  input: "给团队发一封会议邀请邮件"
+  expected_skill: "email"
+  expected_backend: "openclaw"
+
+- id: skill_013
+  input: "在 Notion 中创建项目看板"
+  expected_skill: "notion"
+  expected_backend: "openclaw"
+
+- id: skill_014
+  input: "搜索 React 18 的新特性"
+  expected_skill: "web_search"
+  expected_backend: "openclaw"
+
+- id: skill_015
+  input: "帮我看看深圳今天多少度"
+  expected_skill: "weather"
+  expected_backend: "openclaw"
+
+- id: skill_016
+  input: "GitHub 上搜索 Python 机器学习项目"
+  expected_skill: "github"
+  expected_backend: "openclaw"
+
+- id: skill_017
+  input: "发封邮件通知用户系统维护"
+  expected_skill: "email"
+  expected_backend: "openclaw"
+
+- id: skill_018
+  input: "Notion 中记录今天的开发日志"
+  expected_skill: "notion"
+  expected_backend: "openclaw"
+
+- id: skill_019
+  input: "帮我查一下 Rust 的最新版本"
+  expected_skill: "web_search"
+  expected_backend: "openclaw"
+
+- id: skill_020
+  input: "杭州周末天气怎么样"
+  expected_skill: "weather"
+  expected_backend: "openclaw"
+
+- id: skill_021
+  input: "帮我创建一个新的 GitHub issue"
+  expected_skill: "github"
+  expected_backend: "openclaw"
+
+- id: skill_022
+  input: "发邮件给客户确认需求"
+  expected_skill: "email"
+  expected_backend: "openclaw"
+
+- id: skill_023
+  input: "在 Notion 里整理读书笔记"
+  expected_skill: "notion"
+  expected_backend: "openclaw"
+
+- id: skill_024
+  input: "帮我找一下 Docker Compose 的文档"
+  expected_skill: "web_search"
+  expected_backend: "openclaw"
+
+- id: skill_025
+  input: "Check the weather in London"
+  expected_skill: "weather"
+  expected_backend: "openclaw"
+
+- id: skill_026
+  input: "Create a pull request on GitHub"
+  expected_skill: "github"
+  expected_backend: "openclaw"
+
+- id: skill_027
+  input: "Send an email to the team about the release"
+  expected_skill: "email"
+  expected_backend: "openclaw"
+
+- id: skill_028
+  input: "Add a new page to Notion"
+  expected_skill: "notion"
+  expected_backend: "openclaw"
+
+- id: skill_029
+  input: "Search for best practices in microservices"
+  expected_skill: "web_search"
+  expected_backend: "openclaw"
+
+- id: skill_030
+  input: "帮我查一下成都空气质量"
+  expected_skill: "weather"
+  expected_backend: "openclaw"
+
+- id: skill_031
+  input: "Fork 这个仓库到我的 GitHub"
+  expected_skill: "github"
+  expected_backend: "openclaw"
+
+- id: skill_032
+  input: "群发邮件给所有参会人员"
+  expected_skill: "email"
+  expected_backend: "openclaw"
+
+- id: skill_033
+  input: "Notion 里建一个产品需求文档"
+  expected_skill: "notion"
+  expected_backend: "openclaw"
+
+- id: skill_034
+  input: "帮我搜一下 AWS Lambda 的定价"
+  expected_skill: "web_search"
+  expected_backend: "openclaw"
+
+- id: skill_035
+  input: "广州台风情况如何"
+  expected_skill: "weather"
+  expected_backend: "openclaw"
+
+- id: skill_036
+  input: "帮我 review 这个 GitHub PR"
+  expected_skill: "github"
+  expected_backend: "openclaw"
+
+- id: skill_037
+  input: "用邮件发送这份报告"
+  expected_skill: "email"
+  expected_backend: "openclaw"
+
+- id: skill_038
+  input: "Notion 导出为 PDF"
+  expected_skill: "notion"
+  expected_backend: "openclaw"
+
+- id: skill_039
+  input: "查找 PostgreSQL 性能优化的文章"
+  expected_skill: "web_search"
+  expected_backend: "openclaw"
+
+- id: skill_040
+  input: "明天会不会下雨"
+  expected_skill: "weather"
+  expected_backend: "openclaw"
+
+- id: skill_041
+  input: "帮我管理 GitHub Actions workflow"
+  expected_skill: "github"
+  expected_backend: "openclaw"
+
+- id: skill_042
+  input: "回复客户的邮件"
+  expected_skill: "email"
+  expected_backend: "openclaw"
+
+- id: skill_043
+  input: "在 Notion 中导入 CSV 数据"
+  expected_skill: "notion"
+  expected_backend: "openclaw"
+
+- id: skill_044
+  input: "搜索 GraphQL 最佳实践"
+  expected_skill: "web_search"
+  expected_backend: "openclaw"
+
+- id: skill_045
+  input: "What's the temperature in Paris?"
+  expected_skill: "weather"
+  expected_backend: "openclaw"
+
+- id: skill_046
+  input: "Manage GitHub labels for my repo"
+  expected_skill: "github"
+  expected_backend: "openclaw"
+
+- id: skill_047
+  input: "Draft an email newsletter"
+  expected_skill: "email"
+  expected_backend: "openclaw"
+
+- id: skill_048
+  input: "Search Notion database for meeting notes"
+  expected_skill: "notion"
+  expected_backend: "openclaw"
+
+- id: skill_049
+  input: "Look up Tailwind CSS documentation"
+  expected_skill: "web_search"
+  expected_backend: "openclaw"
+
+- id: skill_050
+  input: "帮我看下三亚紫外线指数"
+  expected_skill: "weather"
+  expected_backend: "openclaw"
+
+- id: skill_051
+  input: "Search GitHub for Go microservice examples"
+  expected_skill: "github"
+  expected_backend: "openclaw"
+
+- id: skill_052
+  input: "发一份周报邮件"
+  expected_skill: "email"
+  expected_backend: "openclaw"
+
+- id: skill_053
+  input: "Notion 创建任务列表"
+  expected_skill: "notion"
+  expected_backend: "openclaw"

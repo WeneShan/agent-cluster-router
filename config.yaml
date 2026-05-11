@@ -1,7 +1,63 @@
+# Agent Cluster Router — 统一配置
+# 支持通用 Backend 抽象，通过配置驱动接入任意 Agent
+
 router:
   host: "0.0.0.0"
   port: 8000
+  version: "3.0.0"
 
+# --- Backend 定义 (P1) ---
+backends:
+  - name: hermes
+    type: hermes                # hermes | openclaw | http | cli
+    url: http://127.0.0.1:8081
+    role: architect             # architect | engineer | researcher | custom
+    weight: 70
+    capabilities:
+      - architecture
+      - planning
+      - review
+      - search
+      - chat
+    timeout_seconds: 180
+    max_retries: 2
+    circuit_breaker:
+      failure_threshold: 5
+      recovery_seconds: 30
+
+  - name: openclaw
+    type: openclaw
+    url: http://127.0.0.1:8082
+    role: engineer
+    weight: 30
+    capabilities:
+      - code
+      - debug
+      - refactor
+      - tool_use
+    skills:                     # 内置 skill 注册表
+      - github
+      - weather
+      - email
+      - notion
+      - web_search
+    timeout_seconds: 180
+    max_retries: 2
+    circuit_breaker:
+      failure_threshold: 5
+      recovery_seconds: 30
+
+  # 示例：通过 HTTP 接入第三方 Agent
+  # - name: custom-agent
+  #   type: http
+  #   url: http://127.0.0.1:9001
+  #   role: researcher
+  #   weight: 20
+  #   capabilities:
+  #     - research
+  #     - summarization
+
+# --- 向后兼容：cluster 定义（保留原有 node registry） ---
 clusters:
   openclaw:
     - name: oc-1
@@ -13,7 +69,7 @@ clusters:
       base_url: http://127.0.0.1:9082
       capability: ["tool-heavy", "experimental"]
       weight: 4
-      healthy: false   # 预留节点，暂不启用
+      healthy: false
   hermes:
     - name: hm-1
       base_url: http://127.0.0.1:8081
@@ -39,3 +95,22 @@ routing:
   default_strategy: "weighted"       # weighted | least_connections | round_robin
   canary:
     hermes_ratio: 1.0
+
+# --- 安全配置 (P2) ---
+# 通过环境变量设置：
+#   export AGENT_ROUTER_API_KEY="your-secret-key"
+# 未设置时跳过鉴权，保持向后兼容
+security:
+  api_key_env: "AGENT_ROUTER_API_KEY"
+  max_message_chars: 20000
+  max_request_size_bytes: 1048576    # 1MB
+
+rate_limit:
+  max_requests_per_minute: 60
+  window_seconds: 60
+
+# --- Commander 配置 (P3) ---
+commander:
+  enabled: true
+  max_tasks_per_session: 20
+  review_timeout_seconds: 120
