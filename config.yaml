@@ -4,7 +4,7 @@ router:
 
 clusters:
   openclaw:
-    - name: oc-mock-1
+    - name: oc-1
       base_url: http://127.0.0.1:8082
       capability: ["tool-heavy", "stable"]
       weight: 10

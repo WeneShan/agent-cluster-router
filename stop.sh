@@ -9,7 +9,7 @@ if [ -f /tmp/agent-cluster.pids ]; then
     rm /tmp/agent-cluster.pids
 else
     pkill -f "adapter/hermes_adapter" 2>/dev/null && echo "Killed hermes adapter"
-    pkill -f "adapter/openclaw_mock" 2>/dev/null && echo "Killed openclaw mock"
+    pkill -f "adapter/openclaw_adapter" 2>/dev/null && echo "Killed openclaw adapter"
     pkill -f "router/server" 2>/dev/null && echo "Killed router"
 fi
 
