@@ -4,11 +4,12 @@ router:
 
 clusters:
   openclaw:
-    - name: oc-1
+    - name: oc-mock-1
       base_url: http://127.0.0.1:8082
       capability: ["tool-heavy", "stable"]
       weight: 10
       healthy: true
+      backend: openclaw-mock
   hermes:
     - name: hm-1
       base_url: http://127.0.0.1:8081
