@@ -20,6 +20,7 @@ app = FastAPI(title="OpenClaw Adapter", version="2.0.0")
 
 # Agent ID used for one-shot calls (created via openclaw agents add)
 OPENCLAW_AGENT = os.environ.get("OPENCLAW_AGENT_ID", "cluster-agent")
+OPENCLAW_MODEL = os.environ.get("OPENCLAW_MODEL", "deepseek/deepseek-v4-flash")
 OPENCLAW_TIMEOUT = int(os.environ.get("OPENCLAW_TIMEOUT", "120"))
 
 
@@ -78,6 +79,7 @@ async def chat(req: ChatRequest):
             [
                 "openclaw", "agent",
                 "--agent", OPENCLAW_AGENT,
+                "--model", OPENCLAW_MODEL,
                 "--local",
                 "--session-id", session_id,
                 "--message", prompt,
@@ -98,13 +100,21 @@ async def chat(req: ChatRequest):
         if output:
             try:
                 data = json.loads(output)
-                # openclaw agent --json 返回格式可能包含 reply/text/content
-                content = data.get("reply") or data.get("text") or data.get("content") or output
+                # openclaw agent --json 返回: payloads[0].text, meta.agentMeta.usage
+                content = (
+                    (data.get("payloads") or [{}])[0].get("text") or
+                    data.get("reply") or data.get("text") or data.get("content") or output
+                )
+                # 提取 token 用量
+                agent_meta = data.get("meta", {}).get("agentMeta", {})
+                usage = agent_meta.get("usage", {}) or agent_meta.get("lastCallUsage", {})
+                tokens = usage.get("total", 0)
             except json.JSONDecodeError:
                 # 不是 JSON，直接使用原始输出
                 content = output
                 # 去除 ANSI 颜色码
-                content = re.sub(r'\x1b\[[0-9;]*m', '', content)
+                content = re.sub(r'\\x1b\\[[0-9;]*m', '', content)
+                tokens = len(content.split())
 
         if not content and result.stderr:
             # 检查是否有错误
@@ -114,8 +124,6 @@ async def chat(req: ChatRequest):
                 content = ""
             else:
                 content = stderr_clean
-
-        tokens = len(content.split())
 
         return {
             "request_id": req.request_id,
