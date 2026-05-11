@@ -74,15 +74,60 @@ async def list_nodes():
 @app.get("/status")
 async def cluster_status():
     """集群状态概览"""
+    canary = routing_engine.get_canary_status()
+    oc_pool = registry.get_pool("openclaw")
+    hm_pool = registry.get_pool("hermes")
     return {
         "openclaw": {
-            "total": len(registry.get_pool("openclaw").nodes) if registry.get_pool("openclaw") else 0,
-            "healthy": len(registry.get_pool("openclaw").healthy_nodes()) if registry.get_pool("openclaw") else 0,
+            "total": len(oc_pool.nodes) if oc_pool else 0,
+            "healthy": len(oc_pool.healthy_nodes()) if oc_pool else 0,
         },
         "hermes": {
-            "total": len(registry.get_pool("hermes").nodes) if registry.get_pool("hermes") else 0,
-            "healthy": len(registry.get_pool("hermes").healthy_nodes()) if registry.get_pool("hermes") else 0,
+            "total": len(hm_pool.nodes) if hm_pool else 0,
+            "healthy": len(hm_pool.healthy_nodes()) if hm_pool else 0,
         },
+        "canary": {
+            "ratio": canary["canary_ratio"],
+            "target": canary["canary_target"],
+            "description": f"{canary['canary_ratio']*100:.0f}% → {canary['canary_target']}, "
+                           f"{(1-canary['canary_ratio'])*100:.0f}% → {canary['default_target']}",
+        },
+        "requests": canary["request_counts"],
+        "total_canary_requests": canary["total_canary_requests"],
+    }
+
+
+@app.get("/canary")
+async def get_canary():
+    """查看当前灰度配置"""
+    return routing_engine.get_canary_status()
+
+
+class CanaryConfig(BaseModel):
+    ratio: float = 0.0        # 0.0-1.0, 灰度目标的后端流量占比
+    target: str = "hermes"    # 灰度目标: hermes | openclaw
+
+
+@app.put("/canary")
+async def set_canary(cfg: CanaryConfig):
+    """动态设置灰度发布参数
+    
+    Example:
+      PUT /canary  {"ratio": 0.3, "target": "hermes"}
+      → 30% 流量走 Hermes, 70% 走 OpenClaw
+      
+      PUT /canary  {"ratio": 1.0, "target": "openclaw"}
+      → 100% 流量走 OpenClaw
+    """
+    if cfg.target not in ("hermes", "openclaw"):
+        raise HTTPException(status_code=400, detail="target must be 'hermes' or 'openclaw'")
+    routing_engine.set_canary(cfg.ratio, cfg.target)
+    routing_engine.reset_counts()
+    return {
+        "message": "Canary updated",
+        "ratio": cfg.ratio,
+        "target": cfg.target,
+        "description": f"{cfg.ratio*100:.0f}% → {cfg.target}",
     }
 
 
