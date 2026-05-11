@@ -13,8 +13,9 @@ from pydantic import BaseModel
 import uvicorn
 
 from router.registry import NodeRegistry
-from router.routing import RoutingEngine
+from router.routing import RoutingEngine, IntentClassifier
 from router.health import HealthChecker
+from router.metrics import MetricsCollector, RequestMetric
 from router.models import (
     AgentRequest, Message, TaskDefinition,
     InputContext, RoutingHint, TaskIntent,
@@ -51,6 +52,7 @@ registry = NodeRegistry()
 routing_engine = RoutingEngine(registry)
 health_checker = HealthChecker(registry)
 session_manager = SessionManager()
+metrics = MetricsCollector()
 
 
 @asynccontextmanager
@@ -123,6 +125,7 @@ async def cluster_status():
         "requests": canary["request_counts"],
         "total_canary_requests": canary["total_canary_requests"],
         "sessions": len(sessions),
+        "metrics_summary": metrics.snapshot()["summary"],
     }
 
 
@@ -176,6 +179,39 @@ async def delete_session_post(req: SessionDeleteRequest):
     return {"message": f"Session {req.session_id} deleted"}
 
 
+@app.get("/strategy")
+async def get_strategy():
+    """查看当前调度策略和负载状态"""
+    return routing_engine.get_load_status()
+
+
+class StrategyConfig(BaseModel):
+    strategy: str = "weighted"   # weighted | least_connections | round_robin
+
+
+@app.put("/strategy")
+async def set_strategy(cfg: StrategyConfig):
+    """切换调度策略"""
+    if cfg.strategy not in ("weighted", "least_connections", "round_robin"):
+        raise HTTPException(status_code=400, detail="strategy must be weighted|least_connections|round_robin")
+    routing_engine.set_strategy(cfg.strategy)
+    return {"message": f"Strategy set to {cfg.strategy}", "strategy": cfg.strategy}
+
+
+@app.get("/metrics")
+async def get_metrics():
+    """查看全局指标"""
+    return metrics.snapshot()
+
+
+@app.post("/metrics/reset")
+async def reset_metrics():
+    """重置所有指标"""
+    metrics.reset()
+    routing_engine.reset_counts()
+    return {"message": "Metrics reset"}
+
+
 @app.post("/chat")
 async def chat(req: ChatRequest):
     """
@@ -204,10 +240,16 @@ async def chat(req: ChatRequest):
     if req.system_prompt:
         full_messages = [{"role": "system", "content": req.system_prompt}] + full_messages
 
+    # 自动意图分类（如果客户端未指定）
+    last_user_content = " ".join(
+        m["content"] for m in full_messages if m.get("role") == "user"
+    )
+    detected_intent = IntentClassifier.classify(last_user_content, TaskIntent(req.intent))
+
     # 路由选择
     internal_req = AgentRequest(
         task=TaskDefinition(
-            intent=TaskIntent(req.intent),
+            intent=detected_intent,
             priority=Priority.NORMAL,
             tags=req.tags,
         ),
@@ -224,7 +266,8 @@ async def chat(req: ChatRequest):
     if not node:
         raise HTTPException(status_code=503, detail="No healthy backend available")
 
-    # 转发到后端（发送完整历史）
+    # 转发到后端（发送完整历史，跟踪连接）
+    routing_engine.acquire_connection(node.name)
     start = time.time()
     async with httpx.AsyncClient(timeout=180) as client:
         try:
@@ -240,17 +283,42 @@ async def chat(req: ChatRequest):
             elapsed_ms = (time.time() - start) * 1000
             data = resp.json()
 
+            routing_engine.release_connection(node.name)
+
+            # 记录指标
+            metrics.record(RequestMetric(
+                request_id=internal_req.request_id,
+                backend=node.cluster,
+                node=node.name,
+                intent=detected_intent.value,
+                elapsed_ms=elapsed_ms,
+                success=data.get("success", True),
+                tokens_used=data.get("tokens_used", 0),
+            ))
+
             return {
                 "request_id": internal_req.request_id,
                 "session_id": session_id,
                 "backend": node.cluster,
                 "node": node.name,
+                "intent": detected_intent.value,
                 "content": data.get("content", ""),
                 "success": data.get("success", resp.status_code == 200),
                 "elapsed_ms": elapsed_ms,
                 "tokens_used": data.get("tokens_used", 0),
             }
         except httpx.RequestError as e:
+            routing_engine.release_connection(node.name)
+            elapsed_ms = (time.time() - start) * 1000
+            metrics.record(RequestMetric(
+                request_id=internal_req.request_id,
+                backend=node.cluster,
+                node=node.name,
+                intent=detected_intent.value,
+                elapsed_ms=elapsed_ms,
+                success=False,
+                tokens_used=0,
+            ))
             pool = registry.get_pool(node.cluster)
             if pool:
                 pool.mark_unhealthy(node.name)

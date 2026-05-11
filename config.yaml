@@ -7,20 +7,35 @@ clusters:
     - name: oc-1
       base_url: http://127.0.0.1:8082
       capability: ["tool-heavy", "stable"]
-      weight: 10
+      weight: 6
       healthy: true
+    - name: oc-2
+      base_url: http://127.0.0.1:9082
+      capability: ["tool-heavy", "experimental"]
+      weight: 4
+      healthy: false   # 预留节点，暂不启用
   hermes:
     - name: hm-1
       base_url: http://127.0.0.1:8081
       capability: ["planning", "fast"]
-      weight: 10
+      weight: 5
       healthy: true
+    - name: hm-2
+      base_url: http://127.0.0.1:9081
+      capability: ["planning", "knowledge"]
+      weight: 3
+      healthy: false
+    - name: hm-3
+      base_url: http://127.0.0.1:9181
+      capability: ["planning", "code"]
+      weight: 2
+      healthy: false
 
 health_check:
   interval_seconds: 10
   failure_threshold: 3
 
 routing:
-  default_strategy: "weighted"
+  default_strategy: "weighted"       # weighted | least_connections | round_robin
   canary:
     hermes_ratio: 1.0
