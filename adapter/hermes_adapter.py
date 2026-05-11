@@ -39,17 +39,12 @@ async def health():
 async def chat(req: ChatRequest):
     """
     接收 Router 转发的聊天请求，调用 hermes chat -q 并返回结果
+    支持多轮对话：将完整消息历史拼接为对话格式 prompt
     """
-    # 提取最后一条 user 消息作为 prompt
-    user_messages = [m["content"] for m in req.messages if m.get("role") == "user"]
-    if not user_messages:
-        raise HTTPException(status_code=400, detail="No user message found")
-
-    prompt = user_messages[-1]
-    # 如果有 system 消息，前置
-    system_msgs = [m["content"] for m in req.messages if m.get("role") == "system"]
-    if system_msgs:
-        prompt = system_msgs[0] + "\n\n" + prompt
+    # 拼接完整对话为 prompt
+    prompt = _format_conversation(req.messages)
+    if not prompt:
+        raise HTTPException(status_code=400, detail="No messages provided")
 
     start = time.time()
     timeout_sec = min(req.timeout_ms / 1000, 180)  # max 3min
@@ -93,6 +88,21 @@ async def chat(req: ChatRequest):
             "tokens_used": 0,
             "error": "Hermes request timed out",
         }
+
+
+def _format_conversation(messages: list[dict]) -> str:
+    """将消息列表格式化为对话 prompt"""
+    parts = []
+    for m in messages:
+        role = m.get("role", "user")
+        content = m.get("content", "")
+        if role == "system":
+            parts.append(f"[System]\n{content}")
+        elif role == "user":
+            parts.append(f"[User]\n{content}")
+        elif role == "assistant":
+            parts.append(f"[Assistant]\n{content}")
+    return "\n\n".join(parts)
 
 
 if __name__ == "__main__":

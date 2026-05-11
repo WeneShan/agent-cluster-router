@@ -27,6 +27,7 @@ OPENCLAW_TIMEOUT = int(os.environ.get("OPENCLAW_TIMEOUT", "120"))
 class ChatRequest(BaseModel):
     request_id: str = ""
     messages: list[dict] = []
+    session_id: str = ""
     timeout_ms: int = 120000
 
 
@@ -57,19 +58,15 @@ async def health():
 async def chat(req: ChatRequest):
     """
     接收 Router 转发的聊天请求，调用 openclaw agent --local 并返回结果
+    支持多轮对话：将完整消息历史拼接为对话 prompt
     """
-    # 提取消息内容
-    user_messages = [m["content"] for m in req.messages if m.get("role") == "user"]
-    if not user_messages:
-        raise HTTPException(status_code=400, detail="No user message found")
+    # 拼接完整对话为 prompt
+    prompt = _format_conversation(req.messages)
+    if not prompt:
+        raise HTTPException(status_code=400, detail="No messages provided")
 
-    prompt = user_messages[-1]
-    system_msgs = [m["content"] for m in req.messages if m.get("role") == "system"]
-    if system_msgs:
-        prompt = system_msgs[0] + "\n\n" + prompt
-
-    # 唯一 session ID（每次请求独立 session）
-    session_id = f"router-{req.request_id[:8] if req.request_id else uuid.uuid4().hex[:8]}"
+    # 使用 Router 传来的 session_id 保持连续性
+    session_id = req.session_id or f"router-{req.request_id[:8] if req.request_id else uuid.uuid4().hex[:8]}"
     
     timeout_sec = min(req.timeout_ms / 1000, OPENCLAW_TIMEOUT)
     start = time.time()
@@ -152,6 +149,21 @@ async def chat(req: ChatRequest):
             "tokens_used": 0,
             "error": "openclaw command not found. Is it installed? Run: npm install -g openclaw",
         }
+
+
+def _format_conversation(messages: list[dict]) -> str:
+    """将消息列表格式化为对话 prompt"""
+    parts = []
+    for m in messages:
+        role = m.get("role", "user")
+        content = m.get("content", "")
+        if role == "system":
+            parts.append(f"[System]\n{content}")
+        elif role == "user":
+            parts.append(f"[User]\n{content}")
+        elif role == "assistant":
+            parts.append(f"[Assistant]\n{content}")
+    return "\n\n".join(parts)
 
 
 if __name__ == "__main__":
