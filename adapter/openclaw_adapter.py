@@ -20,7 +20,7 @@ app = FastAPI(title="OpenClaw Adapter", version="2.0.0")
 
 # Agent ID used for one-shot calls (created via openclaw agents add)
 OPENCLAW_AGENT = os.environ.get("OPENCLAW_AGENT_ID", "cluster-agent")
-OPENCLAW_MODEL = os.environ.get("OPENCLAW_MODEL", "deepseek/deepseek-v4-flash")
+OPENCLAW_MODEL = os.environ.get("OPENCLAW_MODEL", "deepseek/deepseek-v4-pro")
 OPENCLAW_TIMEOUT = int(os.environ.get("OPENCLAW_TIMEOUT", "120"))
 
 
