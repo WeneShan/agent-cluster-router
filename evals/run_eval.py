@@ -61,6 +61,7 @@ def eval_case(case: dict, verbose: bool = False) -> dict:
             "actual_backend": None,
             "expected_intent": case.get("expected_intent"),
             "actual_intent": None,
+            "decision_layer": None,
             "latency_ms": 0,
             "status": "CONNECTION_ERROR",
             "pass": False,
@@ -73,6 +74,7 @@ def eval_case(case: dict, verbose: bool = False) -> dict:
             "actual_backend": None,
             "expected_intent": case.get("expected_intent"),
             "actual_intent": None,
+            "decision_layer": None,
             "latency_ms": 0,
             "status": f"ERROR: {str(e)[:50]}",
             "pass": False,
@@ -122,7 +124,7 @@ def main():
     # 按层统计
     layer_hits = defaultdict(int)
     for r in all_results:
-        if r["decision_layer"]:
+        if r.get("decision_layer"):
             layer_hits[r["decision_layer"]] += 1
 
     # 意图准确率

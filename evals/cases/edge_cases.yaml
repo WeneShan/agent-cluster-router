@@ -27,7 +27,7 @@
   expected_backend: "hermes"
 
 - id: edge_006
-  input: "x" * 5000
+  input: '"x" * 5000'
   expected_behavior: "long_input"
   expected_backend: "hermes"
 
@@ -170,3 +170,47 @@
   input: "explain Kubernetes and design a k8s deployment"
   expected_intent: "plan"
   expected_backend: "hermes"
+
+# --- v5 regression cases (added after IntentClassifier tuning) ---
+
+- id: regression_v5_001
+  input: "你觉得这个方案怎么样"
+  expected_intent: "chat"
+  expected_backend: "hermes"
+  note: "opinion question — should not be classified as plan"
+
+- id: regression_v5_002
+  input: "帮我写一个 SQL 查询来统计用户活跃度"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+  note: "SQL query writing — code intent"
+
+- id: regression_v5_003
+  input: "帮我写一个TypeScript的web scraper"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+  note: "mixed CN/EN code request"
+
+- id: regression_v5_004
+  input: "这个Connection refused怎么解决"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+  note: "error troubleshooting — code intent"
+
+- id: regression_v5_005
+  input: "Add 搜索过滤器 to the codebase"
+  expected_intent: "code"
+  expected_backend: "openclaw"
+  note: "mixed CN/EN code task — 'search' in context should not override"
+
+- id: regression_v5_006
+  input: "Kubernetes是什么"
+  expected_intent: "search"
+  expected_backend: "hermes"
+  note: "knowledge question about k8s — not code deployment"
+
+- id: regression_v5_007
+  input: "我该如何选择技术栈"
+  expected_intent: "plan"
+  expected_backend: "hermes"
+  note: "tech stack selection — architecture planning"

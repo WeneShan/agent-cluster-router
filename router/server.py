@@ -17,12 +17,12 @@ from router.routing import RoutingEngine, IntentClassifier
 from router.health import HealthChecker
 from router.metrics import MetricsCollector, RequestMetric
 from router.models import (
-    AgentRequest, Message, TaskDefinition,
-    InputContext, RoutingHint, TaskIntent,
-    Priority, RouteStrategy,
+    AgentRequest, Message, TaskDefinition, Priority,
+    InputContext, RoutingHint, RouteStrategy, TaskIntent
 )
 from router.security import verify_api_key, validate_messages
 from router.rate_limit import rate_limit
+from commander.api import router as commander_router
 
 
 # --- 会话管理 ---
@@ -71,6 +71,9 @@ app = FastAPI(
     version="2.0.0",
     lifespan=lifespan,
 )
+
+# 注册 Commander API
+app.include_router(commander_router)
 
 
 # --- 请求模型 ---
@@ -231,7 +234,7 @@ async def chat(req: ChatRequest):
     
     dry_run 模式:
       POST /chat {"dry_run": true, "messages": [...]}
-      → 只返回路由决策，不调用后端
+      → 只返回路由决策，不调用后端（跳过限流）
     """
     # 用户隔离 session key
     user_id = req.user_id or "default"
@@ -239,7 +242,7 @@ async def chat(req: ChatRequest):
     session_key = f"{user_id}:{session_id}"
     
     # 消息大小验证
-    validate_messages(new_messages=[{"role": m.role, "content": m.content} for m in req.messages])
+    validate_messages([{"role": m.role, "content": m.content} for m in req.messages])
     
     # 获取会话历史
     history = session_manager.get(session_key) if req.session_id else []
@@ -277,23 +280,25 @@ async def chat(req: ChatRequest):
     )
     
     node = routing_engine.select_node(internal_req)
-    if not node:
-        raise HTTPException(status_code=503, detail="No healthy backend available")
-
-    # --- dry_run 模式：只返回路由决策 ---
+    
+    # --- dry_run 模式：只返回路由决策（无需健康后端） ---
     if req.dry_run:
-        # 判断决策层
+        # 意图 + 后端虚拟选择
+        virtual_backend = node.cluster if node else _intent_backend_fallback(detected_intent)
         decision_layer = _determine_decision_layer(req, internal_req)
-        matched_skill = None  # 未来可从 skill registry 获取
+        matched_skill = None
         return {
             "intent": detected_intent.value,
-            "selected_backend": node.cluster,
-            "node": node.name,
+            "selected_backend": virtual_backend,
+            "node": node.name if node else "none",
             "decision_layer": decision_layer,
             "matched_skill": matched_skill,
             "session_id": session_id,
-            "reason": _routing_reason(decision_layer, detected_intent, node),
+            "reason": f"dry_run — intent: {detected_intent.value}, would route to {virtual_backend}" if not node else _routing_reason(decision_layer, detected_intent, node),
         }
+    
+    if not node:
+        raise HTTPException(status_code=503, detail="No healthy backend available")
 
     # 转发到后端（发送完整历史，跟踪连接）
     routing_engine.acquire_connection(node.name)
@@ -355,6 +360,18 @@ async def chat(req: ChatRequest):
                 status_code=502,
                 detail=f"Backend {node.cluster}/{node.name} unreachable: {str(e)}",
             )
+
+
+def _intent_backend_fallback(intent: TaskIntent) -> str:
+    """Intent → backend 映射（用于 dry_run 无健康节点时）"""
+    mapping = {
+        TaskIntent.CODE: "openclaw",
+        TaskIntent.PLAN: "hermes",
+        TaskIntent.SEARCH: "hermes",
+        TaskIntent.TOOL: "openclaw",
+        TaskIntent.CHAT: "hermes",
+    }
+    return mapping.get(intent, "hermes")
 
 
 def _determine_decision_layer(req: ChatRequest, internal_req: AgentRequest) -> str:

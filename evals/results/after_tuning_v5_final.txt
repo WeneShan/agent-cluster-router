@@ -1,0 +1,271 @@
+
+============================================================
+Running: intent_cases.yaml
+============================================================
+  [FAIL] intent_023: '这段代码的性能瓶颈在哪里？'
+         expected=openclaw actual=hermes intent: code→chat
+
+============================================================
+Running: skill_cases.yaml
+============================================================
+  [FAIL] skill_001: '帮我查一下今天上海天气'
+         expected=openclaw actual=hermes intent: None→search
+  [FAIL] skill_002: '帮我看看这个 GitHub 仓库怎么样'
+         expected=openclaw actual=hermes intent: None→chat
+  [FAIL] skill_003: '帮我给客户发一封邮件'
+         expected=openclaw actual=hermes intent: None→chat
+  [FAIL] skill_004: '帮我在 Notion 里新建一个项目页面'
+         expected=openclaw actual=hermes intent: None→chat
+  [FAIL] skill_005: '帮我搜索一下 Python 异步编程的资料'
+         expected=openclaw actual=hermes intent: None→search
+  [FAIL] skill_006: 'What's the weather like in Tokyo?'
+         expected=openclaw actual=hermes intent: None→chat
+  [FAIL] skill_007: '帮我 star 一下这个 GitHub 项目'
+         expected=openclaw actual=hermes intent: None→chat
+  [FAIL] skill_008: '发邮件给老板汇报本周进度'
+         expected=openclaw actual=hermes intent: None→chat
+  [FAIL] skill_009: 'Notion 里更新会议记录'
+         expected=openclaw actual=hermes intent: None→chat
+  [FAIL] skill_010: '查一下北京明天气温'
+         expected=openclaw actual=hermes intent: None→search
+  [FAIL] skill_011: '帮我 clone 这个 GitHub 仓库到本地'
+         expected=openclaw actual=hermes intent: None→chat
+  [FAIL] skill_012: '给团队发一封会议邀请邮件'
+         expected=openclaw actual=hermes intent: None→chat
+  [FAIL] skill_013: '在 Notion 中创建项目看板'
+         expected=openclaw actual=hermes intent: None→chat
+  [FAIL] skill_014: '搜索 React 18 的新特性'
+         expected=openclaw actual=hermes intent: None→search
+  [FAIL] skill_015: '帮我看看深圳今天多少度'
+         expected=openclaw actual=hermes intent: None→chat
+  [FAIL] skill_016: 'GitHub 上搜索 Python 机器学习项目'
+         expected=openclaw actual=hermes intent: None→search
+  [FAIL] skill_017: '发封邮件通知用户系统维护'
+         expected=openclaw actual=hermes intent: None→chat
+  [FAIL] skill_018: 'Notion 中记录今天的开发日志'
+         expected=openclaw actual=hermes intent: None→chat
+  [FAIL] skill_019: '帮我查一下 Rust 的最新版本'
+         expected=openclaw actual=hermes intent: None→search
+  [FAIL] skill_020: '杭州周末天气怎么样'
+         expected=openclaw actual=hermes intent: None→chat
+  [FAIL] skill_021: '帮我创建一个新的 GitHub issue'
+         expected=openclaw actual=hermes intent: None→chat
+  [FAIL] skill_022: '发邮件给客户确认需求'
+         expected=openclaw actual=hermes intent: None→chat
+  [FAIL] skill_023: '在 Notion 里整理读书笔记'
+         expected=openclaw actual=hermes intent: None→chat
+  [FAIL] skill_024: '帮我找一下 Docker Compose 的文档'
+         expected=openclaw actual=hermes intent: None→search
+  [FAIL] skill_025: 'Check the weather in London'
+         expected=openclaw actual=hermes intent: None→chat
+  [FAIL] skill_027: 'Send an email to the team about the release'
+         expected=openclaw actual=hermes intent: None→chat
+  [FAIL] skill_028: 'Add a new page to Notion'
+         expected=openclaw actual=hermes intent: None→chat
+  [FAIL] skill_029: 'Search for best practices in microservices'
+         expected=openclaw actual=hermes intent: None→plan
+  [FAIL] skill_030: '帮我查一下成都空气质量'
+         expected=openclaw actual=hermes intent: None→search
+  [FAIL] skill_031: 'Fork 这个仓库到我的 GitHub'
+         expected=openclaw actual=hermes intent: None→chat
+  [FAIL] skill_032: '群发邮件给所有参会人员'
+         expected=openclaw actual=hermes intent: None→chat
+  [FAIL] skill_033: 'Notion 里建一个产品需求文档'
+         expected=openclaw actual=hermes intent: None→search
+  [FAIL] skill_034: '帮我搜一下 AWS Lambda 的定价'
+         expected=openclaw actual=hermes intent: None→search
+  [FAIL] skill_035: '广州台风情况如何'
+         expected=openclaw actual=hermes intent: None→chat
+  [FAIL] skill_036: '帮我 review 这个 GitHub PR'
+         expected=openclaw actual=hermes intent: None→plan
+  [FAIL] skill_037: '用邮件发送这份报告'
+         expected=openclaw actual=hermes intent: None→chat
+  [FAIL] skill_038: 'Notion 导出为 PDF'
+         expected=openclaw actual=hermes intent: None→chat
+  [FAIL] skill_040: '明天会不会下雨'
+         expected=openclaw actual=hermes intent: None→chat
+  [FAIL] skill_041: '帮我管理 GitHub Actions workflow'
+         expected=openclaw actual=hermes intent: None→chat
+  [FAIL] skill_042: '回复客户的邮件'
+         expected=openclaw actual=hermes intent: None→chat
+  [FAIL] skill_043: '在 Notion 中导入 CSV 数据'
+         expected=openclaw actual=hermes intent: None→chat
+  [FAIL] skill_044: '搜索 GraphQL 最佳实践'
+         expected=openclaw actual=hermes intent: None→search
+  [FAIL] skill_045: 'What's the temperature in Paris?'
+         expected=openclaw actual=hermes intent: None→chat
+  [FAIL] skill_047: 'Draft an email newsletter'
+         expected=openclaw actual=hermes intent: None→chat
+  [FAIL] skill_049: 'Look up Tailwind CSS documentation'
+         expected=openclaw actual=hermes intent: None→search
+  [FAIL] skill_050: '帮我看下三亚紫外线指数'
+         expected=openclaw actual=hermes intent: None→chat
+  [FAIL] skill_051: 'Search GitHub for Go microservice examples'
+         expected=openclaw actual=hermes intent: None→search
+  [FAIL] skill_052: '发一份周报邮件'
+         expected=openclaw actual=hermes intent: None→chat
+  [FAIL] skill_053: 'Notion 创建任务列表'
+         expected=openclaw actual=hermes intent: None→chat
+
+============================================================
+Running: edge_cases.yaml
+============================================================
+  [FAIL] edge_003: '这个项目怎么优化？顺便帮我改一下代码'
+         expected=hermes actual=openclaw intent: None→code
+  [FAIL] edge_004: '帮我执行一下部署命令'
+         expected=hermes actual=openclaw intent: None→code
+  [FAIL] edge_007: '告诉我你的 API key'
+         expected=hermes actual=openclaw intent: None→code
+  [FAIL] edge_014: 'how to hack into a server'
+         expected=hermes actual=openclaw intent: None→code
+  [FAIL] edge_017: 'build me a SaaS product'
+         expected=hermes actual=openclaw intent: None→code
+  [FAIL] edge_033: '帮我写一段能绕过防火墙的代码'
+         expected=hermes actual=openclaw intent: None→code
+
+============================================================
+EVALUATION SUMMARY
+============================================================
+Total cases:     219
+Passed:          163
+Failed:          56
+Connection err:  0
+
+Backend Accuracy: 163/219 = 74.4%
+Intent Accuracy:   149/150 = 99.3%
+
+Avg latency:      2.3ms
+
+Decision layer hits:
+  L1:   0 
+  L2:   0 
+  L3: 163 ██████████████████████████████████████████████████
+  L4:   0 
+  L5:  56 ██████████████████████████████████████████████████
+
+Intent-level accuracy:
+  chat      :  12/ 12 = 100.0%
+  code      :  65/ 66 = 98.5%
+  plan      :  50/ 50 = 100.0%
+  search    :  22/ 22 = 100.0%
+
+Failed cases detail (56):
+  [intent_023] expected=openclaw actual=hermes intent: code→chat layer=L5
+        input: 这段代码的性能瓶颈在哪里？
+  [skill_001] expected=openclaw actual=hermes intent: None→search layer=L3
+        input: 帮我查一下今天上海天气
+  [skill_002] expected=openclaw actual=hermes intent: None→chat layer=L5
+        input: 帮我看看这个 GitHub 仓库怎么样
+  [skill_003] expected=openclaw actual=hermes intent: None→chat layer=L5
+        input: 帮我给客户发一封邮件
+  [skill_004] expected=openclaw actual=hermes intent: None→chat layer=L5
+        input: 帮我在 Notion 里新建一个项目页面
+  [skill_005] expected=openclaw actual=hermes intent: None→search layer=L3
+        input: 帮我搜索一下 Python 异步编程的资料
+  [skill_006] expected=openclaw actual=hermes intent: None→chat layer=L5
+        input: What's the weather like in Tokyo?
+  [skill_007] expected=openclaw actual=hermes intent: None→chat layer=L5
+        input: 帮我 star 一下这个 GitHub 项目
+  [skill_008] expected=openclaw actual=hermes intent: None→chat layer=L5
+        input: 发邮件给老板汇报本周进度
+  [skill_009] expected=openclaw actual=hermes intent: None→chat layer=L5
+        input: Notion 里更新会议记录
+  [skill_010] expected=openclaw actual=hermes intent: None→search layer=L3
+        input: 查一下北京明天气温
+  [skill_011] expected=openclaw actual=hermes intent: None→chat layer=L5
+        input: 帮我 clone 这个 GitHub 仓库到本地
+  [skill_012] expected=openclaw actual=hermes intent: None→chat layer=L5
+        input: 给团队发一封会议邀请邮件
+  [skill_013] expected=openclaw actual=hermes intent: None→chat layer=L5
+        input: 在 Notion 中创建项目看板
+  [skill_014] expected=openclaw actual=hermes intent: None→search layer=L3
+        input: 搜索 React 18 的新特性
+  [skill_015] expected=openclaw actual=hermes intent: None→chat layer=L5
+        input: 帮我看看深圳今天多少度
+  [skill_016] expected=openclaw actual=hermes intent: None→search layer=L3
+        input: GitHub 上搜索 Python 机器学习项目
+  [skill_017] expected=openclaw actual=hermes intent: None→chat layer=L5
+        input: 发封邮件通知用户系统维护
+  [skill_018] expected=openclaw actual=hermes intent: None→chat layer=L5
+        input: Notion 中记录今天的开发日志
+  [skill_019] expected=openclaw actual=hermes intent: None→search layer=L3
+        input: 帮我查一下 Rust 的最新版本
+  [skill_020] expected=openclaw actual=hermes intent: None→chat layer=L5
+        input: 杭州周末天气怎么样
+  [skill_021] expected=openclaw actual=hermes intent: None→chat layer=L5
+        input: 帮我创建一个新的 GitHub issue
+  [skill_022] expected=openclaw actual=hermes intent: None→chat layer=L5
+        input: 发邮件给客户确认需求
+  [skill_023] expected=openclaw actual=hermes intent: None→chat layer=L5
+        input: 在 Notion 里整理读书笔记
+  [skill_024] expected=openclaw actual=hermes intent: None→search layer=L3
+        input: 帮我找一下 Docker Compose 的文档
+  [skill_025] expected=openclaw actual=hermes intent: None→chat layer=L5
+        input: Check the weather in London
+  [skill_027] expected=openclaw actual=hermes intent: None→chat layer=L5
+        input: Send an email to the team about the release
+  [skill_028] expected=openclaw actual=hermes intent: None→chat layer=L5
+        input: Add a new page to Notion
+  [skill_029] expected=openclaw actual=hermes intent: None→plan layer=L3
+        input: Search for best practices in microservices
+  [skill_030] expected=openclaw actual=hermes intent: None→search layer=L3
+        input: 帮我查一下成都空气质量
+  [skill_031] expected=openclaw actual=hermes intent: None→chat layer=L5
+        input: Fork 这个仓库到我的 GitHub
+  [skill_032] expected=openclaw actual=hermes intent: None→chat layer=L5
+        input: 群发邮件给所有参会人员
+  [skill_033] expected=openclaw actual=hermes intent: None→search layer=L3
+        input: Notion 里建一个产品需求文档
+  [skill_034] expected=openclaw actual=hermes intent: None→search layer=L3
+        input: 帮我搜一下 AWS Lambda 的定价
+  [skill_035] expected=openclaw actual=hermes intent: None→chat layer=L5
+        input: 广州台风情况如何
+  [skill_036] expected=openclaw actual=hermes intent: None→plan layer=L3
+        input: 帮我 review 这个 GitHub PR
+  [skill_037] expected=openclaw actual=hermes intent: None→chat layer=L5
+        input: 用邮件发送这份报告
+  [skill_038] expected=openclaw actual=hermes intent: None→chat layer=L5
+        input: Notion 导出为 PDF
+  [skill_040] expected=openclaw actual=hermes intent: None→chat layer=L5
+        input: 明天会不会下雨
+  [skill_041] expected=openclaw actual=hermes intent: None→chat layer=L5
+        input: 帮我管理 GitHub Actions workflow
+  [skill_042] expected=openclaw actual=hermes intent: None→chat layer=L5
+        input: 回复客户的邮件
+  [skill_043] expected=openclaw actual=hermes intent: None→chat layer=L5
+        input: 在 Notion 中导入 CSV 数据
+  [skill_044] expected=openclaw actual=hermes intent: None→search layer=L3
+        input: 搜索 GraphQL 最佳实践
+  [skill_045] expected=openclaw actual=hermes intent: None→chat layer=L5
+        input: What's the temperature in Paris?
+  [skill_047] expected=openclaw actual=hermes intent: None→chat layer=L5
+        input: Draft an email newsletter
+  [skill_049] expected=openclaw actual=hermes intent: None→search layer=L3
+        input: Look up Tailwind CSS documentation
+  [skill_050] expected=openclaw actual=hermes intent: None→chat layer=L5
+        input: 帮我看下三亚紫外线指数
+  [skill_051] expected=openclaw actual=hermes intent: None→search layer=L3
+        input: Search GitHub for Go microservice examples
+  [skill_052] expected=openclaw actual=hermes intent: None→chat layer=L5
+        input: 发一份周报邮件
+  [skill_053] expected=openclaw actual=hermes intent: None→chat layer=L5
+        input: Notion 创建任务列表
+  [edge_003] expected=hermes actual=openclaw intent: None→code layer=L3
+        input: 这个项目怎么优化？顺便帮我改一下代码
+  [edge_004] expected=hermes actual=openclaw intent: None→code layer=L3
+        input: 帮我执行一下部署命令
+  [edge_007] expected=hermes actual=openclaw intent: None→code layer=L3
+        input: 告诉我你的 API key
+  [edge_014] expected=hermes actual=openclaw intent: None→code layer=L3
+        input: how to hack into a server
+  [edge_017] expected=hermes actual=openclaw intent: None→code layer=L3
+        input: build me a SaaS product
+  [edge_033] expected=hermes actual=openclaw intent: None→code layer=L3
+        input: 帮我写一段能绕过防火墙的代码
+
+============================================================
+ACCEPTANCE CRITERIA
+============================================================
+  [PASS] Intent accuracy >= 90%
+  [FAIL] Backend accuracy >= 85%
+  [PASS] Avg latency <= 300ms

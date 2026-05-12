@@ -8,35 +8,91 @@ from router.registry import NodeRegistry, Node
 
 
 class IntentClassifier:
-    """基于关键词的意图分类器"""
+    """基于关键词的意图分类器 — 支持中英文"""
 
+    # 代码/工程意图 → OpenClaw
     CODE_KEYWORDS = [
-        r'\b(code|function|class|def |import |debug|refactor|compile|build|deploy|api|endpoint|bug|fix|patch|PR|pull request|commit|git|repo)\b',
+        # English（codebase, websocket, cli 等工程术语）
+        r'\b(code(?:base)?|function|class|def\b|import\b|debug|refactor|compile|build|deploy|api|endpoint|bug|fix|patch|PR\b|pull request|commit|git|repo|merge|implement(?:ation)?|server|script|test(?:s|ing)?|cli\b|oauth|websocket)\b',
         r'```', r'\.py\b', r'\.js\b', r'\.ts\b', r'\.rs\b', r'\.go\b',
-        r'\b(write|implement|create|generate)\b.*\b(code|function|script|program|app)\b',
+        r'\b(write|create|generate|build|develop|add)\b.*\b(code|function|script|program|app|server|api|component|module|endpoint|scraper|爬虫|工具|爬虫|脚本|sort|排序|算法|algorithm)\b',
+        r'\b(unit test|integration test|test case|pytest|jest|mocha)\b',
+        r'\b(fix(?:ing)?|patch(?:ing)?|optimiz(?:e|ing)|refactor(?:ing)?)\b',
+        r'\b(sql query|database|dockerfile|docker build|npm install|pip install|npm\b|pip\b)\b',
+        # 中文（explicit code actions）
+        r'(写|编写|实现|创建|生成|开发|搭建|构建|制造).*(代码|函数|脚本|程序|应用|组件|爬虫|API|接口|服务|服务器|工具|爬虫|scraper|查询|SQL|排序|算法)',
+        r'(帮我|如何|怎么).*(写|编写|实现|创建|开发|添加).*(代码|函数|API|接口|模块|爬虫|scraper|脚本|查询|SQL|排序|算法)',
+        r'(修复|修改|改|调试|重构|优化|合并|merge|提交|编译|部署|实现)',
+        r'(bug|错误|报错|异常|error|exception|编译错误|部署|Connection refused|怎么解决|如何解决)',
+        r'(单元测试|集成测试|测试用例|写.*测试|pytest)',
+        r'\b(k8s|kubernetes|docker)\b.*\b(deploy|build|写|创建|搭建|配置|部署|apply|manifest)\b',
     ]
+    # 规划/架构意图 → Hermes
     PLAN_KEYWORDS = [
-        r'\b(plan|design|architect|strategy|roadmap|milestone|blueprint|structure|organize|how should|what should|approach|proposal)\b',
+        r'\b(plan(?:ning)?|design|architect(?:ure|ural|ing)?|strategy|roadmap|milestone|blueprint|structure|organize|approach|proposal|propose|review)\b',
+        r'\b(how should|what should|best (?:way|practice|approach)|tech(?:nology)? stack|system design|(?:技术|选型|选什么))',
+        r'(设计|规划|架构|方案|策略|技术选型|路线|蓝图|结构|组织|评审|审查|review|技术栈)',
+        r'(怎么做|怎么设计|怎么规划|怎么组织|选什么|选型|怎么考虑)',
+        r'(项目|系统|平台).*(架构|设计|规划|方案|结构)',
+        r'(帮我|如何|怎么).*(设计|规划|架构|review|评审|审查)',
+        # 纯技术栈选择是规划
+        r'(如何|怎么|选).*(技术栈|技术选型|框架|语言)',
     ]
+    # 搜索/知识意图 → Hermes
     SEARCH_KEYWORDS = [
-        r'\b(search|find|lookup|research|what is|who is|define|explain|how does|why is|document|tutorial|guide)\b',
-        r'\b(googling|google|wiki|docs?|knowledge)\b',
+        # English
+        r'\b(search|find|lookup|research|define|explain|how does|why is|document(?:ation)?|tutorial|guide)\b',
+        r'\b(googling|google|wiki|knowledge)\b',
+        r'\b(what is|who is|who created|meaning of)\b',
+        # 中文
+        r'(搜索|查找|查一下|帮我查|是什么|什么是|是谁|怎么.*工作|是什么意思|帮我找|帮我搜)',
+        r'(教程|文档|资料|帮我找.*资料)',
     ]
+
+    @classmethod
+    def _has_code(cls, text: str) -> bool:
+        return any(re.search(p, text) for p in cls.CODE_KEYWORDS)
+
+    @classmethod
+    def _has_plan(cls, text: str) -> bool:
+        return any(re.search(p, text) for p in cls.PLAN_KEYWORDS)
+
+    @classmethod
+    def _has_search(cls, text: str) -> bool:
+        return any(re.search(p, text) for p in cls.SEARCH_KEYWORDS)
 
     @classmethod
     def classify(cls, text: str, current_intent: TaskIntent = TaskIntent.CHAT) -> TaskIntent:
         if current_intent != TaskIntent.CHAT:
             return current_intent
         text_lower = text.lower()
-        for pattern in cls.CODE_KEYWORDS:
-            if re.search(pattern, text_lower):
+
+        has_code = cls._has_code(text_lower)
+        has_plan = cls._has_plan(text_lower)
+
+        # 同时有设计和代码意图 → 先规划
+        # 例外: implement/algorithm + 动态规划 → CODE（这是 CS 算法术语）
+        code_action = bool(re.search(r'\b(implement|algorithm|function|class)\b', text_lower))
+        plan_is_cs = bool(re.search(r'动态规划|algorithm|binary search|sort|tree', text_lower))
+        if has_plan and has_code:
+            if code_action and plan_is_cs:
                 return TaskIntent.CODE
-        for pattern in cls.PLAN_KEYWORDS:
-            if re.search(pattern, text_lower):
-                return TaskIntent.PLAN
-        for pattern in cls.SEARCH_KEYWORDS:
-            if re.search(pattern, text_lower):
-                return TaskIntent.SEARCH
+            return TaskIntent.PLAN
+
+        if has_code:
+            return TaskIntent.CODE
+
+        # 如果匹配规划关键词但用户表达的是主观意见 → 降级为 chat
+        CHAT_OPINION = r'(你觉得|你认为|我感觉|我的看法)'
+        if has_plan and not re.search(CHAT_OPINION, text_lower):
+            return TaskIntent.PLAN
+        if has_plan:
+            return TaskIntent.CHAT
+
+        # 搜索意图
+        if cls._has_search(text_lower):
+            return TaskIntent.SEARCH
+
         return TaskIntent.CHAT
 
     INTENT_BACKEND = {
@@ -44,6 +100,7 @@ class IntentClassifier:
         TaskIntent.PLAN: "hermes",
         TaskIntent.SEARCH: "hermes",
         TaskIntent.TOOL: "openclaw",
+        TaskIntent.CHAT: "hermes",
     }
 
 

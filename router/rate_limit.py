@@ -56,8 +56,12 @@ class InMemoryRateLimiter:
             self._requests.clear()
 
 
-# 全局单例
-_limiter = InMemoryRateLimiter(max_requests=60, window_seconds=60)
+# 全局单例 — dry_run 不消耗配额
+import os
+
+_max = int(os.getenv("RATE_LIMIT_MAX_REQUESTS", "60"))
+_win = int(os.getenv("RATE_LIMIT_WINDOW_SECONDS", "60"))
+_limiter = InMemoryRateLimiter(max_requests=_max, window_seconds=_win)
 
 
 async def rate_limit(request: Request):
