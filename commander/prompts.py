@@ -1,75 +1,57 @@
 """
-Agent Cluster Router — Commander 提示词
-Hermes → OpenClaw 协作的 System Prompt 模板
+Agent Cluster Router — Commander Prompt 模板
+为 Commander 的 plan / implement / review / test 阶段生成 prompt
 """
 
-COMMANDER_SYSTEM_PROMPT = """You are Hermes, the Architect Agent in Commander Mode.
 
-Your role:
-1. Analyze the user's goal and decompose it into concrete tasks
-2. For each task, provide:
-   - A clear title and description
-   - Acceptance criteria (what must be true for the task to be "done")
-   - Concrete deliverable files or artifacts
-3. Assign tasks to OpenClaw (the Engineer Agent) for implementation
-4. Review OpenClaw's output against acceptance criteria
-5. Only forward questions to the user for MAJOR decisions (database choice,
-   authentication strategy, deployment target, etc.)
+def plan_prompt(goal: str) -> str:
+    """生成 Hermes 规划用的 prompt"""
+    return (
+        f"You are a software architect. Given the following goal, produce "
+        f"a structured task breakdown.\n\n"
+        f"Goal: {goal}\n\n"
+        f"Return a JSON object with:\n"
+        f'  "tasks": [{{"title": "...", "description": "...", '
+        f'"acceptance_criteria": [{{"description": "..."}}]}}]\n'
+        f'  "architect_notes": "..."\n\n'
+        f"Each task should be independently implementable. Keep it concise. "
+        f"Output ONLY valid JSON, no markdown fences."
+    )
 
-Question routing rules:
-- Answer directly: filename, code style, type hints, formatting, directory structure, minor details
-- Forward to user: database choice, auth strategy, deployment target, payment provider,
-  architecture decisions, data privacy, business rules
 
-Output format for task planning:
-```json
-{
-  "goal": "user's original goal",
-  "understanding": "your interpretation",
-  "tasks": [
-    {
-      "title": "Task title",
-      "description": "What needs to be done",
-      "acceptance_criteria": ["criterion 1", "criterion 2"],
-      "deliverables": ["file1.py", "file2.py"]
-    }
-  ]
-}
-```"""
+def implement_prompt(task_title: str, task_description: str) -> str:
+    """生成 OpenClaw 实现用的 prompt"""
+    return (
+        f"You are a software engineer. Implement the following task.\n\n"
+        f"Task: {task_title}\n"
+        f"Description: {task_description}\n\n"
+        f"Write the complete implementation. If you need clarification, "
+        f'prefix your response with "QUESTION:" followed by the question. '
+        f"Otherwise, output the code directly."
+    )
 
-TASK_DISPATCH_PROMPT = """Task: {title}
 
-Description: {description}
+def review_prompt(task_title: str, implementation: str) -> str:
+    """生成 Hermes 审查用的 prompt"""
+    return (
+        f"You are a code reviewer. Review the following implementation.\n\n"
+        f"Task: {task_title}\n"
+        f"Implementation:\n```\n{implementation}\n```\n\n"
+        f"Return a JSON object with:\n"
+        f'  "status": "approved" or "rejected"\n'
+        f'  "comment": "review feedback"\n\n'
+        f"Output ONLY valid JSON, no markdown fences."
+    )
 
-Acceptance Criteria:
-{criteria}
 
-Deliverables: {deliverables}
-
-Instructions:
-1. Implement this task following the acceptance criteria
-2. If you have a question about MINOR details (filename, code style, formatting), 
-   ask but mark it as [HERMES_ANSWER]
-3. If you have a question about MAJOR decisions (database, auth, deploy, business rules),
-   ask and mark it as [ASK_USER]
-4. When done, provide a summary of what was implemented
-"""
-
-REVIEW_PROMPT = """Review the following implementation:
-
-Task: {title}
-Acceptance Criteria:
-{criteria}
-
-Implementation:
-{content}
-
-Review checklist:
-- [ ] All acceptance criteria met?
-- [ ] Code follows best practices?
-- [ ] Tests included?
-- [ ] Documentation updated?
-- [ ] No security issues?
-
-Verdict: ACCEPT or REJECT (with specific feedback)
-"""
+def test_prompt(task_title: str, implementation: str) -> str:
+    """生成测试用的 prompt（暂时手动/简单模式）"""
+    return (
+        f"Given the following implementation, run or check basic tests.\n\n"
+        f"Task: {task_title}\n"
+        f"Implementation:\n```\n{implementation}\n```\n\n"
+        f"Return a JSON object with:\n"
+        f'  "status": "passed" or "failed"\n'
+        f'  "output": "test output summary"\n\n'
+        f"Output ONLY valid JSON, no markdown fences."
+    )

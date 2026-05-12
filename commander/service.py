@@ -8,7 +8,7 @@ from datetime import datetime
 from commander.models import CommanderSession, CommanderTask, CommanderState, TaskState
 from commander.state_machine import transition, validate_transition
 from commander.executor import CommanderExecutor
-from commander.fake_executor import FakeCommanderExecutor
+from commander.executor_factory import get_commander_executor
 
 
 class CommanderService:
@@ -16,7 +16,7 @@ class CommanderService:
 
     def __init__(self, executor: Optional[CommanderExecutor] = None):
         self._sessions: Dict[str, CommanderSession] = {}
-        self._executor = executor or FakeCommanderExecutor()
+        self._executor = executor or get_commander_executor()
 
     def create_session(self, user_id: str, goal: str) -> CommanderSession:
         """创建新的 Commander 会话"""
@@ -273,5 +273,5 @@ class CommanderService:
         return session
 
 
-# 全局单例
+# 全局单例（根据 COMMANDER_EXECUTOR 环境变量选择真实/fake 执行器）
 commander_service = CommanderService()
