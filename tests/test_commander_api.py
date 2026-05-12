@@ -2,6 +2,8 @@
 import pytest
 from fastapi.testclient import TestClient
 
+pytestmark = pytest.mark.integration
+
 from router.server import app
 
 client = TestClient(app)

@@ -3,6 +3,7 @@ import pytest
 import sys
 sys.path.insert(0, "/srv/agent-cluster")
 
+pytestmark = pytest.mark.unit
 
 class TestNodeRegistry:
     def test_loads_both_pools(self, registry):

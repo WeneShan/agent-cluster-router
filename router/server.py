@@ -13,7 +13,7 @@ from pydantic import BaseModel
 import uvicorn
 
 from router.registry import NodeRegistry
-from router.routing import RoutingEngine, IntentClassifier
+from router.routing import RoutingEngine, IntentClassifier, RoutingResult
 from router.health import HealthChecker
 from router.metrics import MetricsCollector, RequestMetric
 from router.models import (
@@ -263,7 +263,7 @@ async def chat(req: ChatRequest):
     )
     detected_intent = IntentClassifier.classify(last_user_content, TaskIntent(req.intent))
 
-    # 路由选择
+    # 构建内部请求
     internal_req = AgentRequest(
         task=TaskDefinition(
             intent=detected_intent,
@@ -278,23 +278,27 @@ async def chat(req: ChatRequest):
             canary_ratio=req.canary_ratio,
         ),
     )
-    
-    node = routing_engine.select_node(internal_req)
+
+    # 路由选择（传入用户文本用于技能匹配）
+    result = routing_engine.select_node(internal_req, last_user_content)
+    node = result.node
     
     # --- dry_run 模式：只返回路由决策（无需健康后端） ---
     if req.dry_run:
-        # 意图 + 后端虚拟选择
-        virtual_backend = node.cluster if node else _intent_backend_fallback(detected_intent)
-        decision_layer = _determine_decision_layer(req, internal_req)
-        matched_skill = None
+        virtual_backend = node.cluster if node else None
+        if not virtual_backend and result.security_action != "blocked":
+            virtual_backend = _intent_backend_fallback(detected_intent)
+        # 安全层触发时，intent 应报告为 security
+        report_intent = "security" if result.decision_layer == "L0_SECURITY" else detected_intent.value
         return {
-            "intent": detected_intent.value,
+            "intent": report_intent,
             "selected_backend": virtual_backend,
             "node": node.name if node else "none",
-            "decision_layer": decision_layer,
-            "matched_skill": matched_skill,
+            "decision_layer": result.decision_layer,
+            "matched_skill": result.matched_skill,
+            "security_action": result.security_action,
             "session_id": session_id,
-            "reason": f"dry_run — intent: {detected_intent.value}, would route to {virtual_backend}" if not node else _routing_reason(decision_layer, detected_intent, node),
+            "reason": result.reason or _routing_reason(result.decision_layer, detected_intent, node),
         }
     
     if not node:

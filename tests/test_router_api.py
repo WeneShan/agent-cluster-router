@@ -3,6 +3,8 @@ import pytest
 import sys
 sys.path.insert(0, "/srv/agent-cluster")
 
+pytestmark = pytest.mark.integration
+
 from fastapi.testclient import TestClient
 
 # 导入 app 前，mock 掉 lifespan（避免启动后台健康检查）

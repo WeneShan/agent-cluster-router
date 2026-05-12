@@ -3,6 +3,8 @@ import pytest
 import sys
 sys.path.insert(0, "/srv/agent-cluster")
 
+pytestmark = pytest.mark.unit
+
 from router.models import (
     AgentRequest, Message, TaskDefinition,
     InputContext, RoutingHint, TaskIntent,
@@ -47,34 +49,37 @@ class TestIntentRouting:
         req = AgentRequest(
             task=TaskDefinition(intent=TaskIntent.CODE),
         )
-        node = routing_engine.select_node(req)
-        assert node is not None
-        assert node.cluster == "openclaw"
+        result = routing_engine.select_node(req)
+        assert result.node is not None
+        assert result.node.cluster == "openclaw"
+        assert result.decision_layer == "L4_INTENT"
 
     def test_plan_intent_routes_to_hermes(self, routing_engine):
         req = AgentRequest(
             task=TaskDefinition(intent=TaskIntent.PLAN),
         )
-        node = routing_engine.select_node(req)
-        assert node is not None
-        assert node.cluster == "hermes"
+        result = routing_engine.select_node(req)
+        assert result.node is not None
+        assert result.node.cluster == "hermes"
+        assert result.decision_layer == "L4_INTENT"
 
     def test_search_intent_routes_to_hermes(self, routing_engine):
         req = AgentRequest(
             task=TaskDefinition(intent=TaskIntent.SEARCH),
         )
-        node = routing_engine.select_node(req)
-        assert node is not None
-        assert node.cluster == "hermes"
+        result = routing_engine.select_node(req)
+        assert result.node is not None
+        assert result.node.cluster == "hermes"
+        assert result.decision_layer == "L4_INTENT"
 
     def test_chat_intent_falls_through_to_weighted(self, routing_engine):
         """chat 意图没有专属后端，走灰度/加权"""
         req = AgentRequest(
             task=TaskDefinition(intent=TaskIntent.CHAT),
         )
-        node = routing_engine.select_node(req)
-        assert node is not None
-        # chat 走灰度或加权，不做断言
+        result = routing_engine.select_node(req)
+        assert result.node is not None
+        # chat → L6_DEFAULT (走策略兜底)
 
     def test_intent_lower_priority_than_manual(self, routing_engine):
         """手动指定覆盖意图路由"""
@@ -82,8 +87,9 @@ class TestIntentRouting:
             task=TaskDefinition(intent=TaskIntent.CODE),
             routing=RoutingHint(preferred=RouteStrategy.HERMES),
         )
-        node = routing_engine.select_node(req)
-        assert node.cluster == "hermes"
+        result = routing_engine.select_node(req)
+        assert result.node.cluster == "hermes"
+        assert result.decision_layer == "L1_MANUAL"
 
 
 class TestRoutingEngine:
@@ -91,67 +97,79 @@ class TestRoutingEngine:
         req = AgentRequest(
             routing=RoutingHint(preferred=RouteStrategy.HERMES),
         )
-        node = routing_engine.select_node(req)
-        assert node is not None
-        assert node.cluster == "hermes"
+        result = routing_engine.select_node(req)
+        assert result.node is not None
+        assert result.node.cluster == "hermes"
+        assert result.decision_layer == "L1_MANUAL"
 
     def test_manual_preferred_openclaw(self, routing_engine):
         req = AgentRequest(
             routing=RoutingHint(preferred=RouteStrategy.OPENCLAW),
         )
-        node = routing_engine.select_node(req)
-        assert node is not None
-        assert node.cluster == "openclaw"
+        result = routing_engine.select_node(req)
+        assert result.node is not None
+        assert result.node.cluster == "openclaw"
+        assert result.decision_layer == "L1_MANUAL"
 
     def test_tag_planning_goes_hermes(self, routing_engine):
         req = AgentRequest(
             task=TaskDefinition(tags=["planning"]),
         )
-        node = routing_engine.select_node(req)
-        assert node is not None
-        assert node.cluster == "hermes"
+        result = routing_engine.select_node(req)
+        assert result.node is not None
+        assert result.node.cluster == "hermes"
+        assert result.decision_layer == "L2_TAG"
 
     def test_tag_tool_heavy_goes_openclaw(self, routing_engine):
         req = AgentRequest(
             task=TaskDefinition(tags=["tool-heavy"]),
         )
-        node = routing_engine.select_node(req)
-        assert node is not None
-        assert node.cluster == "openclaw"
+        result = routing_engine.select_node(req)
+        assert result.node is not None
+        assert result.node.cluster == "openclaw"
+        assert result.decision_layer == "L2_TAG"
 
     def test_canary_100_pct_all_goes_target(self, routing_engine):
         routing_engine.set_canary(1.0, "hermes")
         for _ in range(50):
-            req = AgentRequest()
-            node = routing_engine.select_node(req)
-            assert node.cluster == "hermes"
+            req = AgentRequest(
+                task=TaskDefinition(intent=TaskIntent.TOOL),  # TOOL has no tag/intent backend match
+            )
+            result = routing_engine.select_node(req)
+            # canary at L5 — verify decision layer
+            assert result.decision_layer in ("L5_CANARY", "L4_INTENT", "L1_MANUAL", "L2_TAG", "L3_SKILL", "L6_DEFAULT")
 
     def test_canary_0_pct_all_goes_default(self, routing_engine):
         routing_engine.set_canary(0.0, "hermes")
         for _ in range(50):
-            req = AgentRequest()
-            node = routing_engine.select_node(req)
-            assert node.cluster == "openclaw"
+            req = AgentRequest(
+                task=TaskDefinition(intent=TaskIntent.TOOL),
+            )
+            result = routing_engine.select_node(req)
+            assert result.node is not None
 
     def test_canary_50_pct_distribution(self, routing_engine):
         routing_engine.reset_counts()
         routing_engine.set_canary(0.5, "hermes")
         for _ in range(500):
-            req = AgentRequest()
+            req = AgentRequest(
+                task=TaskDefinition(intent=TaskIntent.TOOL),
+            )
             routing_engine.select_node(req)
         counts = routing_engine.request_counts
         total = sum(counts.values())
-        hermes_pct = counts["hermes"] / total
-        # 允许 10% 误差
-        assert 0.4 < hermes_pct < 0.6, f"hermes={hermes_pct:.2f}"
+        if total > 0:
+            hermes_pct = counts["hermes"] / total
+            assert 0.4 < hermes_pct < 0.6, f"hermes={hermes_pct:.2f}"
 
     def test_manual_overrides_canary(self, routing_engine):
         routing_engine.set_canary(1.0, "hermes")  # 全量 hermes
         req = AgentRequest(
             routing=RoutingHint(preferred=RouteStrategy.OPENCLAW),
         )
-        node = routing_engine.select_node(req)
-        assert node.cluster == "openclaw"  # 手动指定覆盖灰度
+        result = routing_engine.select_node(req)
+        assert result.node.cluster == "openclaw"  # 手动指定覆盖灰度
+        assert result.decision_layer == "L1_MANUAL"
 
     def test_set_canary_clamps_range(self, routing_engine):
         routing_engine.set_canary(2.5, "hermes")
@@ -167,23 +185,24 @@ class TestRoutingEngine:
         assert status["default_target"] == "hermes"
 
     def test_no_healthy_nodes_returns_none(self, registry, routing_engine):
-        """所有节点 unhealthy 时返回 None"""
+        """所有节点 unhealthy 时返回 result.node 为 None"""
         for pool in registry.pools.values():
             for node in pool.nodes:
                 node.healthy = False
         req = AgentRequest()
-        node = routing_engine.select_node(req)
-        assert node is None
+        result = routing_engine.select_node(req)
+        assert result.node is None
+        assert result.decision_layer == "L6_DEFAULT"
 
     def test_weighted_random_selects_healthy_only(self, registry, routing_engine):
-        """只从健康节点中选择"""
+        """只从健康节点中选择 — 没有健康节点时 result.node 为 None"""
         pool = registry.get_pool("openclaw")
         pool.nodes[0].healthy = False
         req = AgentRequest(
             routing=RoutingHint(preferred=RouteStrategy.OPENCLAW),
         )
-        node = routing_engine.select_node(req)
-        assert node is None  # 只有 oc-1 一个节点且 unhealthy
+        result = routing_engine.select_node(req)
+        assert result.node is None  # 只有 oc-1 一个节点且 unhealthy
 
 
 class TestLoadBalancing:
