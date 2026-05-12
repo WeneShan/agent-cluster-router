@@ -8,14 +8,16 @@ from typing import Optional
 from router.models import AgentRequest, RouteStrategy, TaskIntent
 from router.registry import NodeRegistry, Node
 from router.skill_registry import match_skill, SkillDefinition
+from router.security_routing import evaluate_security, SecurityRoutingResult, SecurityAction
 
 
 @dataclass
 class RoutingResult:
     """路由决策结果"""
     node: Optional[Node] = None
-    decision_layer: str = "L5_DEFAULT"
+    decision_layer: str = "L6_DEFAULT"
     matched_skill: Optional[str] = None
+    security_action: Optional[str] = None
     reason: str = ""
 
 
@@ -133,10 +135,24 @@ class RoutingEngine:
 
     def select_node(self, req: AgentRequest, user_text: str = "") -> RoutingResult:
         """
-        路由优先级: manual → tags → skill → intent → canary → strategy
+        路由优先级: security → manual → tags → skill → intent → canary → strategy
         """
         preferred = req.routing.preferred
         tags = req.task.tags
+
+        # 0. 安全路由（最高优先级，不可被任何其它层覆盖）
+        if user_text:
+            sec_result = evaluate_security(user_text)
+            if sec_result.matched:
+                node = None
+                if sec_result.action != SecurityAction.BLOCK:
+                    node = self._pick_from_pool(sec_result.selected_backend or "hermes")
+                return RoutingResult(
+                    node=node,
+                    decision_layer="L0_SECURITY",
+                    security_action=sec_result.action.value,
+                    reason=sec_result.reason,
+                )
 
         # 1. 手动指定
         if preferred == RouteStrategy.HERMES:
