@@ -37,6 +37,7 @@ SESSION_TRANSITIONS: dict[CommanderState, list[CommanderState]] = {
         CommanderState.ACCEPTED,
         CommanderState.REJECTED,
         CommanderState.FAILED,
+        CommanderState.TASK_DISPATCHED,  # 多任务：当前任务通过后分发下一个
     ],
     CommanderState.ACCEPTED: [],         # 终态
     CommanderState.REJECTED: [

@@ -200,3 +200,107 @@ def test_user_isolation():
         params={"user_id": "user_B"},
     )
     assert resp_b.status_code == 404
+
+
+# ============================================================
+# v5.4: POST /commander/sessions/{id}/continue — 推进会话
+# ============================================================
+
+def test_continue_success():
+    """完整流程：planning → accepted（端到端通过 GET 验证）"""
+    from commander.service import commander_service
+
+    session = commander_service.create_session(
+        user_id="user_continue", goal="Build a CLI"
+    )
+    session_id = session.id
+
+    # Step 1: planning → task_dispatched
+    resp = client.post(
+        f"/commander/sessions/{session_id}/continue",
+        json={"user_id": "user_continue"},
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["state"] == "task_dispatched"
+    assert data["event"]["from"] == "planning"
+    assert data["event"]["to"] == "task_dispatched"
+
+    # Step 2: task_dispatched → implementing
+    resp = client.post(
+        f"/commander/sessions/{session_id}/continue",
+        json={"user_id": "user_continue"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["state"] == "implementing"
+
+    # Step 3: implementing → reviewing
+    resp = client.post(
+        f"/commander/sessions/{session_id}/continue",
+        json={"user_id": "user_continue"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["state"] == "reviewing"
+
+    # Step 4: reviewing → testing
+    resp = client.post(
+        f"/commander/sessions/{session_id}/continue",
+        json={"user_id": "user_continue"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["state"] == "testing"
+
+    # Step 5: testing → accepted
+    resp = client.post(
+        f"/commander/sessions/{session_id}/continue",
+        json={"user_id": "user_continue"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["state"] == "accepted"
+
+
+def test_continue_nonexistent_session_returns_404():
+    resp = client.post(
+        "/commander/sessions/nonexistent/continue",
+        json={"user_id": "user_test"},
+    )
+    assert resp.status_code == 404
+
+
+def test_continue_wrong_user_returns_404():
+    """user_B 不能推进 user_A 的 session"""
+    from commander.service import commander_service
+
+    session = commander_service.create_session(
+        user_id="user_A_cont", goal="A's session"
+    )
+    resp = client.post(
+        f"/commander/sessions/{session.id}/continue",
+        json={"user_id": "user_B"},
+    )
+    assert resp.status_code == 404
+
+
+def test_continue_from_accepted_returns_400():
+    """终态 accepted 不可继续"""
+    from commander.service import commander_service
+
+    session = commander_service.create_session(
+        user_id="user_terminal", goal="test terminal"
+    )
+    # 快速推到 accepted
+    for _ in range(5):
+        client.post(
+            f"/commander/sessions/{session.id}/continue",
+            json={"user_id": "user_terminal"},
+        )
+
+    # 确认已到 accepted
+    assert session.state.value == "accepted"
+
+    # 再次 continue 应该 400
+    resp = client.post(
+        f"/commander/sessions/{session.id}/continue",
+        json={"user_id": "user_terminal"},
+    )
+    assert resp.status_code == 400
