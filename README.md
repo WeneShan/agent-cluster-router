@@ -1,8 +1,8 @@
 <div align="center">
 
-# 🚦 Agent Cluster Router v5.0
+# 🚦 Agent Cluster Router v5.3
 
-**Multi-Agent Collaborative Gateway — Smart Routing · Eval System · Backend Abstraction · Security · Commander State Machine**
+**Multi-Agent Collaborative Gateway — Smart Routing · Eval System · Backend Abstraction · Security · Commander State Machine · Test Layering**
 
 [<kbd> <b>🇬🇧 English</b> </kbd>](#en) 
 [<kbd> <b>🇨🇳 中文</b> </kbd>](#zh)
@@ -27,13 +27,45 @@ Agent Cluster Router 将多个 AI Agent 后端（Hermes、OpenClaw）编排为�
 - ✅ Commander REST API 可用 (9/9 integration tests pass)
 - ✅ 平均路由延迟极低 (2.3ms)
 
-**Known Gaps:**
-| Gap | 计划版本 | 说明 |
-|-----|---------|------|
-| ⚠️ Skill-aware Backend Routing | v5.1 | Skill cases 无 skill routing 层，全部落到 Hermes |
-| ⚠️ Security-aware Routing | v5.2 | 危险命令缺少 security_check / confirmation_required |
-| ⚠️ Canary 历史测试 (2 条) | v5.3 | 历史遗留，暂不阻塞主线 |
-| ⚠️ E2E 测试超时 (4 条) | v5.3 | 受真实 AI 后端延迟影响 |
+**版本演进：**
+
+| 版本 | 功能 | 状态 |
+|------|------|------|
+| v5.0 | Eval 框架 + Backend 抽象 + 安全基础 + Commander 状态机 | ✅ |
+| v5.1 | Skill-aware Backend Routing（9 Skill + L3 层） | ✅ |
+| v5.2 | Security-aware Routing（L0 安全层，5 条规则） | ✅ |
+| v5.3 | 测试分层 + CI 稳定性（pytest.ini + Makefile + E2E 隔离） | ✅ |
+
+**Known Remaining Issues (2):**
+| # | ID | 说明 | 类型 |
+|---|-----|------|------|
+| 1 | intent_023 | "这段代码的性能瓶颈在哪里？" → 误判为 chat | intent 边缘 case |
+| 2 | edge_003 | "这个项目怎么优化？顺便帮我改一下代码" → 策略决策 | policy 边缘 case |
+
+两者均为非阻塞，不影响主线功能。
+
+### v5.3 新增：测试分层与 CI 稳定性
+
+| 模块 | 说明 |
+|------|------|
+| **pytest.ini** | 注册 unit/integration/e2e/slow 标记，默认跳过 e2e |
+| **Makefile** | `make test` / `make test-unit` / `make test-integration` / `make test-e2e` / `make eval` |
+| **E2E 隔离** | 4 条 chat/session E2E 测试默认 skip（需 `SKIP_REAL_BACKEND=0`），4 条轻量 E2E 保留 |
+| **测试标记** | 全量 145 测试已标记：119 unit + 18 integration + 8 e2e |
+
+```bash
+# 快速（默认）— unit + integration，<1 秒
+make test
+
+# 仅 unit 测试
+make test-unit
+
+# E2E（需要后端运行）
+SKIP_REAL_BACKEND=0 make test-e2e
+
+# 评测
+make eval
+```
 
 ### v5.0 新增
 
@@ -44,21 +76,24 @@ Agent Cluster Router 将多个 AI Agent 后端（Hermes、OpenClaw）编排为�
 | **🔒 安全体系 (P2)** | API Key 鉴权、user_id session 隔离、限流、消息大小限制、日志脱敏、熔断器 |
 | **🤖 Commander 状态机 (P3)** | CommanderSession/Task 状态定义、合法流转验证、提问分流策略、REST API + 集成测试 |
 
-### 最新评测结果 (v5 final)
+### 最新评测结果 (v5.3)
 
 | 指标 | 结果 | 状态 |
 |------|------|------|
-| Intent Accuracy | 149/150 (99.3%) | ✅ ≥ 90% |
-| Backend Accuracy | 163/219 (74.4%) | ⚠️ Skill 路由层待追加 |
-| Avg Latency | 2.3ms | ✅ ≤ 300ms |
-| Unit Tests | 94/96 PASS | ✅ (2 条 canary 历史遗留) |
+| Overall Accuracy | 237/239 (99.2%) | ✅ ≥ 95% |
+| Intent Accuracy | 165/166 (99.4%) | ✅ ≥ 95% |
+| Skill Routing Accuracy | 53/53 (100.0%) | ✅ ≥ 95% |
+| Security Routing Accuracy | 16/16 (100.0%) | ✅ ≥ 90% |
+| Core Backend Accuracy | 184/186 (98.9%) | ✅ ≥ 85% |
+| Avg Latency | 2.0ms | ✅ ≤ 300ms |
+| Unit Tests | 137/137 PASS | ✅ (8 e2e 按需跳过) |
 
 ### 核心功能
 
 | 功能 | 说明 |
 |------|------|
 | **🧠 指挥官模式** | Hermes（架构师）↔ OpenClaw（工程师）多轮协作 |
-| **🎯 五层决策路由** | L1: 手动指定 → L2: 标签匹配 → L3: 意图路由 → L4: 灰度 → L5: 策略兜底 |
+| **🎯 七层决策路由** | L0: 安全 → L1: 手动 → L2: 标签 → L3: Skill → L4: 意图 → L5: 灰度 → L6: 兜底 |
 | **🔧 Skill 感知路由** | 自动检测 OpenClaw 技能（天气、GitHub、音乐、邮件等）并路由 |
 | **📋 意图路由** | 代码/调试/重构 → OpenClaw，规划/搜索/闲聊 → Hermes |
 | **⚖️ 负载均衡** | 加权随机 / 最少连接 / 轮询，运行时动态切换 |
@@ -129,6 +164,9 @@ agent-cluster-router/
 │   ├── server.py                # FastAPI Router（主入口，dry_run + 鉴权 + 限流）
 │   ├── routing.py               # 路由引擎 + 意图分类
 │   ├── registry.py              # 节点注册中心
+│   ├── skill_registry.py        # Skill 注册与匹配（L3）
+│   ├── security_policy.py       # 安全策略规则（L0）
+│   ├── security_routing.py      # 安全路由决策（L0）
 │   ├── health.py                # 健康检查
 │   ├── metrics.py               # 指标收集器
 │   ├── security.py              # API Key 鉴权 + 脱敏 + 消息验证 (P2)
@@ -144,9 +182,11 @@ agent-cluster-router/
 ├── evals/                       # 评测体系 (P0)
 │   ├── run_eval.py              # 一键评测脚本
 │   ├── cases/
-│   │   ├── intent_cases.yaml    # 125 条意图测试用例
+│   │   ├── intent_cases.yaml    # 166 条意图测试用例
 │   │   ├── skill_cases.yaml     # 53 条 Skill 测试用例
-│   │   └── edge_cases.yaml      # 34 条边界测试用例
+│   │   ├── edge_cases.yaml      # 41 条边界测试用例
+│   │   └── security_cases.yaml  # 20 条安全测试用例
+│   ├── reports/                 # 评测报告
 │   └── README.md
 ├── commander/                   # Commander 状态机 (P3)
 │   ├── models.py                # CommanderState / CommanderTask / CommanderSession
@@ -160,7 +200,19 @@ agent-cluster-router/
 ├── scripts/
 │   ├── hermes_cluster_router.py
 │   └── hermes_commander.py
-└── tests/
+├── tests/                       # 测试（分层标记）
+│   ├── conftest.py
+│   ├── test_routing.py          # unit: 意图分类 + 路由引擎
+│   ├── test_skill_registry.py   # unit: Skill 匹配
+│   ├── test_security_routing.py # unit: 安全路由
+│   ├── test_registry.py         # unit: 节点注册
+│   ├── test_session.py          # unit: 会话管理
+│   ├── test_commander_state_machine.py  # unit: 状态机
+│   ├── test_router_api.py       # integration: Router API
+│   ├── test_commander_api.py    # integration: Commander API
+│   └── test_e2e.py              # e2e: 端到端（默认跳过）
+├── Makefile                     # 测试分层入口
+└── pytest.ini                   # Pytest 配置 + 标记注册
 ```
 
 ### 技术栈
@@ -208,7 +260,7 @@ Python 3.11 · FastAPI · uvicorn · httpx · PyYAML · pytest · deepseek-v4-pr
 
 <div align="center">
 
-**v5.0** · 评测体系 + Backend 抽象 + 安全框架 + Commander 状态机 · [WeneShan/agent-cluster-router](https://github.com/WeneShan/agent-cluster-router)
+**v5.3** · 评测体系 + Backend 抽象 + 安全框架 + Commander 状态机 + 测试分层 · [WeneShan/agent-cluster-router](https://github.com/WeneShan/agent-cluster-router)
 
 </div>
 

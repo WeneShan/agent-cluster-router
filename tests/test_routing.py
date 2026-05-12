@@ -3,6 +3,8 @@ import pytest
 import sys
 sys.path.insert(0, "/srv/agent-cluster")
 
+pytestmark = pytest.mark.unit
+
 from router.models import (
     AgentRequest, Message, TaskDefinition,
     InputContext, RoutingHint, TaskIntent,

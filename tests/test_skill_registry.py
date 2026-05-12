@@ -2,6 +2,7 @@
 import pytest
 from router.skill_registry import match_skill, get_skill_backend, OPENCLAW_SKILLS
 
+pytestmark = pytest.mark.unit
 
 class TestSkillMatching:
     """测试技能匹配"""

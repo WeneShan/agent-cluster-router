@@ -1,8 +1,10 @@
 """Unit tests for security-aware routing (L0_SECURITY layer)"""
 import pytest
+
+pytestmark = pytest.mark.unit
+
 from router.security_policy import match_security_policy, SecurityAction, SECURITY_RULES
 from router.security_routing import evaluate_security
-
 
 class TestSecurityPolicy:
     """安全策略规则匹配"""

@@ -1,6 +1,8 @@
 """Commander 状态机单元测试 — 验证合法与非法状态流转"""
 import pytest
 
+pytestmark = pytest.mark.unit
+
 from commander.models import CommanderState, TaskState
 from commander.state_machine import (
     transition,
