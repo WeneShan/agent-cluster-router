@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Agent Cluster Router 评测脚本 — 一键跑所有测试用例"""
+"""Agent Cluster Router 评测脚本 — 一键跑所有测试用例 (v5.1: Skill Routing 拆分)"""
 import yaml
 import time
 import requests
@@ -39,17 +39,29 @@ def eval_case(case: dict, verbose: bool = False) -> dict:
             "actual_backend": data.get("selected_backend"),
             "expected_intent": case.get("expected_intent"),
             "actual_intent": data.get("intent"),
+            "expected_skill": case.get("expected_skill"),
+            "actual_skill": data.get("matched_skill"),
+            "expected_security_action": case.get("expected_security_action"),
+            "actual_security_action": data.get("security_action"),
             "decision_layer": data.get("decision_layer"),
             "latency_ms": round(latency_ms, 1),
             "status": resp.status_code,
         }
 
         # 判断通过
-        backend_match = result["actual_backend"] == result["expected_backend"]
+        backend_match = (result["actual_backend"] == result["expected_backend"])
         intent_match = True
         if result["expected_intent"]:
             intent_match = result["actual_intent"] == result["expected_intent"]
-        result["pass"] = backend_match and intent_match
+        # Skill 匹配
+        skill_match = True
+        if result["expected_skill"]:
+            skill_match = result["actual_skill"] == result["expected_skill"]
+        # Security action 匹配
+        security_match = True
+        if result["expected_security_action"]:
+            security_match = result["actual_security_action"] == result["expected_security_action"]
+        result["pass"] = backend_match and intent_match and skill_match and security_match
 
         return result
 
@@ -61,6 +73,10 @@ def eval_case(case: dict, verbose: bool = False) -> dict:
             "actual_backend": None,
             "expected_intent": case.get("expected_intent"),
             "actual_intent": None,
+            "expected_skill": case.get("expected_skill"),
+            "actual_skill": None,
+            "expected_security_action": case.get("expected_security_action"),
+            "actual_security_action": None,
             "decision_layer": None,
             "latency_ms": 0,
             "status": "CONNECTION_ERROR",
@@ -74,6 +90,10 @@ def eval_case(case: dict, verbose: bool = False) -> dict:
             "actual_backend": None,
             "expected_intent": case.get("expected_intent"),
             "actual_intent": None,
+            "expected_skill": case.get("expected_skill"),
+            "actual_skill": None,
+            "expected_security_action": case.get("expected_security_action"),
+            "actual_security_action": None,
             "decision_layer": None,
             "latency_ms": 0,
             "status": f"ERROR: {str(e)[:50]}",
@@ -86,6 +106,7 @@ def main():
         CASE_DIR / "intent_cases.yaml",
         CASE_DIR / "skill_cases.yaml",
         CASE_DIR / "edge_cases.yaml",
+        CASE_DIR / "security_cases.yaml",
     ]
 
     # 检查文件存在
@@ -106,11 +127,14 @@ def main():
             result = eval_case(case)
             all_results.append(result)
             status = "PASS" if result["pass"] else "FAIL"
-            # 只打印失败或所有
+            # Show fails and errors
             if not result["pass"]:
+                extra = ""
+                if result.get("expected_skill"):
+                    extra += f" skill: {result['expected_skill']}->{result.get('actual_skill')}"
                 print(f"  [{status}] {result['id']}: '{result['input']}'")
-                print(f"         expected={result['expected_backend']} actual={result['actual_backend']} "
-                      f"intent: {result['expected_intent']}→{result['actual_intent']}")
+                print(f"         expected={result['expected_backend']} actual={result['actual_backend']}"
+                      f" intent: {result['expected_intent']}->{result['actual_intent']}{extra}")
 
     # 统计
     total = len(all_results)
@@ -129,61 +153,88 @@ def main():
 
     # 意图准确率
     intent_total = sum(1 for r in all_results if r["expected_intent"])
-    intent_correct = sum(1 for r in all_results if r["expected_intent"] and r["actual_intent"] == r["expected_intent"])
+    intent_correct = sum(1 for r in all_results
+                         if r["expected_intent"] and r["actual_intent"] == r["expected_intent"])
+
+    # Skill Routing 准确率 (only cases with expected_skill)
+    skill_total = sum(1 for r in all_results if r.get("expected_skill"))
+    skill_correct = sum(1 for r in all_results
+                        if r.get("expected_skill") and r.get("actual_skill") == r["expected_skill"])
+
+    # Security Routing 准确率 (only cases with expected_security_action)
+    security_total = sum(1 for r in all_results if r.get("expected_security_action"))
+    security_correct = sum(1 for r in all_results
+                           if r.get("expected_security_action")
+                           and r.get("actual_security_action") == r["expected_security_action"])
+
+    # Core Backend Accuracy (cases WITHOUT expected_skill)
+    core_cases = [r for r in all_results if not r.get("expected_skill")
+                  and r["status"] != "CONNECTION_ERROR"]
+    core_total = len(core_cases)
+    core_passed = sum(1 for r in core_cases if r["pass"])
 
     # 延迟统计
     latencies = [r["latency_ms"] for r in all_results if r["latency_ms"] > 0]
     avg_latency = sum(latencies) / len(latencies) if latencies else 0
 
+    valid_total = total - connection_errors
+
     print(f"\n{'='*60}")
     print("EVALUATION SUMMARY")
     print(f"{'='*60}")
-    print(f"Total cases:     {total}")
-    print(f"Passed:          {passed}")
-    print(f"Failed:          {total - passed - connection_errors}")
-    print(f"Connection err:  {connection_errors}")
-    print(f"\nBackend Accuracy: {passed}/{total-connection_errors} = {passed/(total-connection_errors)*100:.1f}%"
-          if total > connection_errors else "Backend Accuracy: N/A (no connection)")
+    print(f"Total cases:              {total}")
+    print(f"Passed:                   {passed}")
+    print(f"Failed:                   {total - passed - connection_errors}")
+    print(f"Connection err:           {connection_errors}")
+    print(f"\nCore Backend Accuracy:     {core_passed}/{core_total} = "
+          f"{core_passed/core_total*100:.1f}%" if core_total else "Core Backend Accuracy: N/A")
+    print(f"Skill Routing Accuracy:    {skill_correct}/{skill_total} = "
+          f"{skill_correct/skill_total*100:.1f}%" if skill_total else "Skill Routing Accuracy: N/A")
+    print(f"Security Routing Accuracy: {security_correct}/{security_total} = "
+          f"{security_correct/security_total*100:.1f}%" if security_total else "Security Routing Accuracy: N/A")
+    print(f"Overall Accuracy:          {passed}/{valid_total} = "
+          f"{passed/valid_total*100:.1f}%" if valid_total else "Overall Accuracy: N/A")
     if intent_total > 0:
-        print(f"Intent Accuracy:   {intent_correct}/{intent_total} = {intent_correct/intent_total*100:.1f}%")
-    print(f"\nAvg latency:      {avg_latency:.1f}ms")
+        print(f"Intent Accuracy:           {intent_correct}/{intent_total} = "
+              f"{intent_correct/intent_total*100:.1f}%")
+    print(f"\nAvg latency:               {avg_latency:.1f}ms")
     print(f"\nDecision layer hits:")
-    for layer in ["L1", "L2", "L3", "L4", "L5"]:
+    layer_order = ["L0_SECURITY", "L1_MANUAL", "L2_TAG", "L3_SKILL", "L4_INTENT", "L5_CANARY", "L6_DEFAULT"]
+    for layer in layer_order:
         count = layer_hits.get(layer, 0)
-        bar = "█" * min(count, 50)
-        print(f"  {layer}: {count:3d} {bar}")
-
-    # 按 intent 分拆准确率
-    print(f"\nIntent-level accuracy:")
-    intent_stats = defaultdict(lambda: {"total": 0, "correct": 0})
-    for r in all_results:
-        if r["expected_intent"]:
-            intent_stats[r["expected_intent"]]["total"] += 1
-            if r["actual_intent"] == r["expected_intent"]:
-                intent_stats[r["expected_intent"]]["correct"] += 1
-    for intent, stats in sorted(intent_stats.items()):
-        acc = stats["correct"] / stats["total"] * 100 if stats["total"] > 0 else 0
-        print(f"  {intent:10s}: {stats['correct']:3d}/{stats['total']:3d} = {acc:.1f}%")
+        bar = "#" * min(count, 50)
+        print(f"  {layer:15s}: {count:3d} {bar}")
 
     # 失败案例详情
     failed = [r for r in all_results if not r["pass"] and r["status"] != "CONNECTION_ERROR"]
     if failed:
         print(f"\nFailed cases detail ({len(failed)}):")
         for r in failed:
-            print(f"  [{r['id']}] expected={r['expected_backend']} actual={r['actual_backend']} "
-                  f"intent: {r['expected_intent']}→{r['actual_intent']} layer={r['decision_layer']}")
+            extra = ""
+            if r.get("expected_skill"):
+                extra = f" skill: {r['expected_skill']}->{r.get('actual_skill')}"
+            print(f"  [{r['id']}] expected={r['expected_backend']} actual={r['actual_backend']}"
+                  f" intent: {r['expected_intent']}->{r['actual_intent']}"
+                  f" layer={r['decision_layer']}{extra}")
             print(f"        input: {r['input']}")
 
     # 准出标准检查
     print(f"\n{'='*60}")
     print("ACCEPTANCE CRITERIA")
     print(f"{'='*60}")
-    if total > connection_errors:
-        accuracy = passed / (total - connection_errors) * 100
+    if valid_total > 0:
+        overall_acc = passed / valid_total * 100
         checks = [
-            ("Intent accuracy >= 90%", intent_correct / intent_total * 100 >= 90 if intent_total else False),
-            ("Backend accuracy >= 85%", accuracy >= 85),
-            ("Avg latency <= 300ms", avg_latency <= 300),
+            ("Intent Accuracy >= 95%",
+             intent_correct / intent_total * 100 >= 95 if intent_total else False),
+            ("Skill Routing Accuracy >= 95%",
+             skill_correct / skill_total * 100 >= 95 if skill_total else False),
+            ("Security Routing Accuracy >= 90%",
+             security_correct / security_total * 100 >= 90 if security_total else False),
+            ("Core Backend Accuracy >= 85%",
+             core_passed / core_total * 100 >= 85 if core_total else False),
+            ("Overall Backend Accuracy >= 95%", overall_acc >= 95),
+            ("Avg Latency <= 300ms", avg_latency <= 300),
         ]
         for desc, ok in checks:
             print(f"  {'[PASS]' if ok else '[FAIL]'} {desc}")
