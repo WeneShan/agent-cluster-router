@@ -1,8 +1,8 @@
 <div align="center">
 
-# 🚦 Agent Cluster Router v5.3
+# 🚦 Agent Cluster Router v5.5
 
-**Multi-Agent Collaborative Gateway — Smart Routing · Eval System · Backend Abstraction · Security · Commander State Machine · Test Layering**
+**Multi-Agent Collaborative Gateway — Smart Routing · Eval System · Backend Abstraction · Security · Commander State Machine · Test Layering · Real Executor Integration**
 
 [<kbd> <b>🇬🇧 English</b> </kbd>](#en) 
 [<kbd> <b>🇨🇳 中文</b> </kbd>](#zh)
@@ -35,6 +35,8 @@ Agent Cluster Router 将多个 AI Agent 后端（Hermes、OpenClaw）编排为�
 | v5.1 | Skill-aware Backend Routing（9 Skill + L3 层） | ✅ |
 | v5.2 | Security-aware Routing（L0 安全层，5 条规则） | ✅ |
 | v5.3 | 测试分层 + CI 稳定性（pytest.ini + Makefile + E2E 隔离） | ✅ |
+| v5.4 | Commander Continue 执行流（10 状态流转 + Executor 抽象 + FakeExecutor） | ✅ |
+| v5.5 | Real Commander Executor Integration（Hermes plan/review → OpenClaw implement，env-switchable factory） | ✅ |
 
 **Known Remaining Issues (2):**
 | # | ID | 说明 | 类型 |
@@ -44,6 +46,36 @@ Agent Cluster Router 将多个 AI Agent 后端（Hermes、OpenClaw）编排为�
 
 两者均为非阻塞，不影响主线功能。
 
+### v5.5 新增：Real Commander Executor Integration
+
+**真实执行器**：Commander continue 工作流可调用真实 AI 后端
+
+| 角色 | 后端 | 说明 |
+|------|------|------|
+| plan | Hermes (:8081) | 架构设计 + 任务拆分 |
+| implement | OpenClaw (:8082) | 代码实现 |
+| review | Hermes (:8081) | 代码审查 |
+| test | Hermes (:8081) | 测试检查 |
+
+**环境变量控制**
+```bash
+COMMANDER_EXECUTOR=fake  # 默认，稳定快速无 AI 依赖
+COMMANDER_EXECUTOR=real  # 调用真实 Hermes/OpenClaw
+```
+
+**新增文件**: `commander/real_executor.py`, `commander/executor_factory.py`, `commander/prompts.py`
+
+### v5.4 新增：Commander Continue 执行流
+
+**10 种状态流转**：planning → task_dispatched → implementing → (question_pending → user_decision_required →) reviewing → testing → accepted/rejected
+
+| 新增 | 说明 |
+|------|------|
+| `CommanderExecutor` 抽象 | plan/implement/review/test 四个接口 |
+| `FakeCommanderExecutor` | 可配置失败模式的测试执行器 |
+| `continue_session()` | 推进 Commander 会话到下个状态 |
+| `POST /commander/sessions/{id}/continue` | REST API 端点 |
+
 ### v5.3 新增：测试分层与 CI 稳定性
 
 | 模块 | 说明 |
@@ -51,7 +83,7 @@ Agent Cluster Router 将多个 AI Agent 后端（Hermes、OpenClaw）编排为�
 | **pytest.ini** | 注册 unit/integration/e2e/slow 标记，默认跳过 e2e |
 | **Makefile** | `make test` / `make test-unit` / `make test-integration` / `make test-e2e` / `make eval` |
 | **E2E 隔离** | 4 条 chat/session E2E 测试默认 skip（需 `SKIP_REAL_BACKEND=0`），4 条轻量 E2E 保留 |
-| **测试标记** | 全量 145 测试已标记：119 unit + 18 integration + 8 e2e |
+| **测试标记** | 全量 183 测试已标记：119 unit + 18 integration + 8 e2e + 38 commander |
 
 ```bash
 # 快速（默认）— unit + integration，<1 秒
@@ -76,7 +108,7 @@ make eval
 | **🔒 安全体系 (P2)** | API Key 鉴权、user_id session 隔离、限流、消息大小限制、日志脱敏、熔断器 |
 | **🤖 Commander 状态机 (P3)** | CommanderSession/Task 状态定义、合法流转验证、提问分流策略、REST API + 集成测试 |
 
-### 最新评测结果 (v5.3)
+### 最新评测结果 (v5.5)
 
 | 指标 | 结果 | 状态 |
 |------|------|------|
@@ -86,7 +118,7 @@ make eval
 | Security Routing Accuracy | 16/16 (100.0%) | ✅ ≥ 90% |
 | Core Backend Accuracy | 184/186 (98.9%) | ✅ ≥ 85% |
 | Avg Latency | 2.0ms | ✅ ≤ 300ms |
-| Unit Tests | 137/137 PASS | ✅ (8 e2e 按需跳过) |
+| Unit Tests | 183/183 PASS | ✅ (8 e2e 按需跳过) |
 
 ### 核心功能
 
@@ -144,6 +176,7 @@ python3 evals/run_eval.py
 || `GET` | `/commander/sessions/{id}` | 查询会话（user_id 隔离） |
 || `GET` | `/commander/sessions/{id}/tasks` | 查询任务列表 |
 || `POST` | `/commander/sessions/{id}/answer` | 提交用户决策 |
+| `POST` | `/commander/sessions/{id}/continue` | 推进 Commander 会话（v5.4+） |
 
 ### 鉴权
 
@@ -188,11 +221,16 @@ agent-cluster-router/
 │   │   └── security_cases.yaml  # 20 条安全测试用例
 │   ├── reports/                 # 评测报告
 │   └── README.md
-├── commander/                   # Commander 状态机 (P3)
+├── commander/                   # Commander 状态机 + 执行流 (P3)
 │   ├── models.py                # CommanderState / CommanderTask / CommanderSession
 │   ├── state_machine.py         # 状态流转规则和验证
-│   ├── service.py               # Session 生命周期管理
-│   ├── prompts.py               # 提示词模板
+│   ├── service.py               # Session 生命周期 + continue_session()
+│   ├── executor.py              # CommanderExecutor 抽象基类 (v5.4)
+│   ├── fake_executor.py         # 测试用假执行器 (v5.4)
+│   ├── real_executor.py         # 真实执行器：Hermes plan/review → OpenClaw implement (v5.5)
+│   ├── executor_factory.py      # COMMANDER_EXECUTOR 环境变量工厂 (v5.5)
+│   ├── prompts.py               # plan/implement/review/test prompt 模板 (v5.5)
+│   ├── api.py                   # Commander REST API
 │   └── question_policy.yaml     # 提问分流策略
 ├── adapter/
 │   ├── hermes_adapter.py        # Hermes CLI → HTTP
@@ -208,6 +246,11 @@ agent-cluster-router/
 │   ├── test_registry.py         # unit: 节点注册
 │   ├── test_session.py          # unit: 会话管理
 │   ├── test_commander_state_machine.py  # unit: 状态机
+│   ├── test_commander_executor.py       # unit: 假执行器 (v5.4)
+│   ├── test_commander_continue.py       # unit: 状态流转 (v5.4)
+│   ├── test_commander_executor_factory.py # unit: 工厂 (v5.5)
+│   ├── test_real_executor_contract.py     # unit: 真实执行器契约 (v5.5)
+│   ├── test_commander_real_e2e.py         # e2e: 真实后端 (v5.5, 默认 skip)
 │   ├── test_router_api.py       # integration: Router API
 │   ├── test_commander_api.py    # integration: Commander API
 │   └── test_e2e.py              # e2e: 端到端（默认跳过）
@@ -260,7 +303,7 @@ Python 3.11 · FastAPI · uvicorn · httpx · PyYAML · pytest · deepseek-v4-pr
 
 <div align="center">
 
-**v5.3** · 评测体系 + Backend 抽象 + 安全框架 + Commander 状态机 + 测试分层 · [WeneShan/agent-cluster-router](https://github.com/WeneShan/agent-cluster-router)
+**v5.5** · 评测体系 + Backend 抽象 + 安全框架 + Commander 状态机 + 测试分层 + 真实执行器集成 · [WeneShan/agent-cluster-router](https://github.com/WeneShan/agent-cluster-router)
 
 </div>
 
