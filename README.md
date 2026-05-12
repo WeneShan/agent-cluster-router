@@ -21,10 +21,19 @@ Agent Cluster Router 将多个 AI Agent 后端（Hermes、OpenClaw）编排为�
 
 | 模块 | 说明 |
 |------|------|
-| **📊 评测体系 (P0)** | dry_run 路由、180+ 测试用例（意图/Skill/边界）、run_eval.py 一键跑分 |
+| **📊 评测体系 (P0)** | dry_run 路由、212+ 测试用例（意图/Skill/边界/回归）、run_eval.py 一键跑分 |
 | **🔌 Backend 抽象 (P1)** | AgentBackend 统一接口，支持 Hermes/OpenClaw/HTTP Agent/CLI Agent 任意接入 |
 | **🔒 安全体系 (P2)** | API Key 鉴权、user_id session 隔离、限流、消息大小限制、日志脱敏、熔断器 |
-| **🤖 Commander 状态机 (P3)** | CommanderSession/Task 状态定义、合法流转验证、提问分流策略、验收标准 |
+| **🤖 Commander 状态机 (P3)** | CommanderSession/Task 状态定义、合法流转验证、提问分流策略、REST API + 集成测试 |
+
+### 最新评测结果 (v5 final)
+
+| 指标 | 结果 | 状态 |
+|------|------|------|
+| Intent Accuracy | 149/150 (99.3%) | ✅ ≥ 90% |
+| Backend Accuracy | 163/219 (74.4%) | ⚠️ Skill 路由层待追加 |
+| Avg Latency | 2.3ms | ✅ ≤ 300ms |
+| Unit Tests | 94/96 PASS | ✅ (2 条 canary 历史遗留) |
 
 ### 核心功能
 
@@ -74,9 +83,14 @@ python3 evals/run_eval.py
 | `GET` | `/sessions` | 活跃会话列表 |
 | `DELETE` | `/sessions/{id}` | 清除指定会话 |
 | `GET` | `/metrics` | 完整指标快照 |
-| `POST` | `/metrics/reset` | 重置计数 |
-| `GET` | `/strategy` | 当前负载均衡策略 |
-| `PUT` | `/strategy` | 切换策略 |
+|| `POST` | `/metrics/reset` | 重置计数 |
+|| `GET` | `/strategy` | 当前负载均衡策略 |
+|| `PUT` | `/strategy` | 切换策略 |
+|| **Commander API** | | |
+|| `POST` | `/commander/sessions` | 创建 Commander 会话 |
+|| `GET` | `/commander/sessions/{id}` | 查询会话（user_id 隔离） |
+|| `GET` | `/commander/sessions/{id}/tasks` | 查询任务列表 |
+|| `POST` | `/commander/sessions/{id}/answer` | 提交用户决策 |
 
 ### 鉴权
 
