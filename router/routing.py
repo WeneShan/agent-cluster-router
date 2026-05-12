@@ -1,10 +1,22 @@
-"""路由策略引擎 — 支持加权随机、最少连接、轮询 + 意图/标签/灰度路由"""
+"""路由策略引擎 — 支持加权随机、最少连接、轮询 + 意图/标签/灰度/技能路由"""
 import random
 import re
 import time
 from collections import defaultdict
+from dataclasses import dataclass
+from typing import Optional
 from router.models import AgentRequest, RouteStrategy, TaskIntent
 from router.registry import NodeRegistry, Node
+from router.skill_registry import match_skill, SkillDefinition
+
+
+@dataclass
+class RoutingResult:
+    """路由决策结果"""
+    node: Optional[Node] = None
+    decision_layer: str = "L5_DEFAULT"
+    matched_skill: Optional[str] = None
+    reason: str = ""
 
 
 class IntentClassifier:
@@ -119,43 +131,91 @@ class RoutingEngine:
         self.active_connections: dict[str, int] = defaultdict(int)  # node_name → count
         self.round_robin_idx: dict[str, int] = defaultdict(int)     # cluster → next index
 
-    def select_node(self, req: AgentRequest) -> Node | None:
+    def select_node(self, req: AgentRequest, user_text: str = "") -> RoutingResult:
         """
-        路由优先级: manual → tags → intent → canary → strategy
+        路由优先级: manual → tags → skill → intent → canary → strategy
         """
         preferred = req.routing.preferred
         tags = req.task.tags
 
         # 1. 手动指定
         if preferred == RouteStrategy.HERMES:
-            return self._pick_from_pool("hermes")
+            node = self._pick_from_pool("hermes")
+            return RoutingResult(
+                node=node,
+                decision_layer="L1_MANUAL",
+                reason=f"manual override to hermes",
+            )
         if preferred == RouteStrategy.OPENCLAW:
-            return self._pick_from_pool("openclaw")
+            node = self._pick_from_pool("openclaw")
+            return RoutingResult(
+                node=node,
+                decision_layer="L1_MANUAL",
+                reason=f"manual override to openclaw",
+            )
 
         # 2. 标签匹配
         if "planning" in tags:
             node = self._pick_from_pool("hermes")
-            if node: return node
+            if node:
+                return RoutingResult(
+                    node=node,
+                    decision_layer="L2_TAG",
+                    reason="matched tag rule: planning → hermes",
+                )
         if "tool-heavy" in tags:
             node = self._pick_from_pool("openclaw")
-            if node: return node
+            if node:
+                return RoutingResult(
+                    node=node,
+                    decision_layer="L2_TAG",
+                    reason="matched tag rule: tool-heavy → openclaw",
+                )
 
-        # 3. 意图路由
+        # 3. Skill Routing（优先于 Intent Routing）
+        if user_text:
+            skill = match_skill(user_text)
+            if skill:
+                node = self._pick_from_pool(skill.backend)
+                if node:
+                    return RoutingResult(
+                        node=node,
+                        decision_layer="L3_SKILL",
+                        matched_skill=skill.name,
+                        reason=f"matched skill '{skill.name}' → {skill.backend}",
+                    )
+
+        # 4. 意图路由
         intent = req.task.intent
         if intent in IntentClassifier.INTENT_BACKEND:
             backend = IntentClassifier.INTENT_BACKEND[intent]
             node = self._pick_from_pool(backend)
-            if node: return node
+            if node:
+                return RoutingResult(
+                    node=node,
+                    decision_layer="L4_INTENT",
+                    reason=f"matched intent '{intent.value}' → {backend}",
+                )
 
-        # 4. 灰度比例
+        # 5. 灰度比例
         cluster = self._canary_choice()
         if cluster:
             self.request_counts[cluster] = self.request_counts.get(cluster, 0) + 1
             node = self._pick_from_pool(cluster)
-            if node: return node
+            if node:
+                return RoutingResult(
+                    node=node,
+                    decision_layer="L5_CANARY",
+                    reason=f"canary traffic routing to {cluster}",
+                )
 
-        # 5. 按策略兜底
-        return self._select_by_strategy()
+        # 6. 按策略兜底
+        node = self._select_by_strategy()
+        return RoutingResult(
+            node=node,
+            decision_layer="L6_DEFAULT",
+            reason=f"strategy-based fallback to {node.cluster if node else 'none'}",
+        )
 
     def _pick_from_pool(self, cluster: str) -> Node | None:
         """从指定集群的健康节点中按策略选择"""
