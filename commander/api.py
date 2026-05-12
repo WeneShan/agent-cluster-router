@@ -23,6 +23,10 @@ class AnswerRequest(BaseModel):
     answer: str
 
 
+class ContinueRequest(BaseModel):
+    user_id: str
+
+
 @router.post("/sessions")
 async def create_session(req: CreateCommanderSessionRequest):
     """创建新的 Commander 协作会话"""
@@ -79,6 +83,33 @@ async def answer_question(session_id: str, req: AnswerRequest):
         task.user_decision = req.answer
         service.transition_task(session_id, task.id, "implementing")
         return session.model_dump()
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/sessions/{session_id}/continue")
+async def continue_session(session_id: str, req: ContinueRequest):
+    """推进 Commander 会话到下一个状态
+
+    根据当前 session 状态自动决策下一步：
+      planning → task_dispatched
+      task_dispatched → implementing
+      implementing → reviewing | question_pending
+      question_pending → user_decision_required | implementing
+      user_decision_required → implementing
+      reviewing → testing | rejected
+      testing → accepted | rejected
+      rejected → implementing
+    """
+    session = service.get_session(session_id)
+
+    if not session or session.user_id != req.user_id:
+        raise HTTPException(status_code=404, detail="Commander session not found")
+
+    try:
+        result = await service.continue_session(session_id)
+        return result
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
