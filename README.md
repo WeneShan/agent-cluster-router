@@ -17,6 +17,24 @@
 
 Agent Cluster Router 将多个 AI Agent 后端（Hermes、OpenClaw）编排为统一智能网关。**v5.0 新增评测体系、通用 Backend 抽象接口、安全可靠性体系、Commander 状态机**。
 
+### v5.0 Release Notes
+
+**已完成能力：**
+- ✅ IntentClassifier 高准确率 (99.3%)
+- ✅ 中/英文意图识别稳定
+- ✅ dry_run eval 框架可跑，报告可复现
+- ✅ Commander 状态机存在 (26/26 tests pass)
+- ✅ Commander REST API 可用 (9/9 integration tests pass)
+- ✅ 平均路由延迟极低 (2.3ms)
+
+**Known Gaps:**
+| Gap | 计划版本 | 说明 |
+|-----|---------|------|
+| ⚠️ Skill-aware Backend Routing | v5.1 | Skill cases 无 skill routing 层，全部落到 Hermes |
+| ⚠️ Security-aware Routing | v5.2 | 危险命令缺少 security_check / confirmation_required |
+| ⚠️ Canary 历史测试 (2 条) | v5.3 | 历史遗留，暂不阻塞主线 |
+| ⚠️ E2E 测试超时 (4 条) | v5.3 | 受真实 AI 后端延迟影响 |
+
 ### v5.0 新增
 
 | 模块 | 说明 |
